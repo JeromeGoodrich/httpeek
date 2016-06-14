@@ -8,5 +8,7 @@
                  [ring "1.5.0"]
                  [compojure "1.5.0"]]
   :profiles {:dev {:dependencies [[speclj "3.3.1"]]}}
-  :plugins [[speclj "3.3.1"]]
-  :test-paths ["spec"])
+  :plugins [[speclj "3.3.1"]
+            [lein-ring "0.9.7"]]
+  :test-paths ["spec"]
+  :ring {:handler httpeek.handler/app*})
