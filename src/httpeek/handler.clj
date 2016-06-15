@@ -1,8 +1,7 @@
 (ns httpeek.handler
   (:use compojure.core)
-  (:require [compojure.handler :as handler]
-            [compojure.route :as route]
-            [ring.util.response :as response]))
+  (:require [ring.util.response :as response]
+            [compojure.route :as route]))
 
 (defroutes app-routes
            (GET "/" [] (->(response/resource-response "index.html" {:root "public"})
@@ -10,5 +9,5 @@
            (route/not-found "Page not Found"))
 
 (def app*
-  (handler/site app-routes))
+  app-routes)
 
