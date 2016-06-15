@@ -26,3 +26,20 @@
       (should= 404
              (:status response)))))
 
+(describe "POST /bins"
+  (context "the bin is created sucessfully"
+    (it "should return a status of 200"
+      (let [response (app* (mock/request :post "/bins"))]
+        (should= 201
+                 (:status response))))
+
+    (it "should create a new bin"
+      (let [response (app* (mock/request :post "/bins"))]
+        (println @bins)
+        (should-contain "/bin/1"
+                        (keys @bins))))
+
+    (it "should redirect to the bin's inspect-page"
+      (let [response (app* (mock/request :get "/bin/1" "inspect"))]
+        (should= 302
+                 (:status response))))))
