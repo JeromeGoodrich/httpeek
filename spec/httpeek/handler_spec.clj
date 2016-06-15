@@ -7,7 +7,6 @@
 (describe "GET /"
   (it "should return a status of 200"
     (let [response (app* (mock/request :get "/"))]
-      (println response)
       (should= 200
              (:status response))))
 
@@ -20,3 +19,10 @@
     (let [response (app* (mock/request :get "/"))]
       (should= "index.html"
              (.toString(.getFileName(.toPath(:body response))))))))
+
+(describe "Not Found"
+  (it "returns a status of 404"
+    (let [response (app* (mock/request :get "/foo"))]
+      (should= 404
+             (:status response)))))
+
