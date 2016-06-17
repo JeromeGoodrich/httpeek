@@ -1,35 +1,28 @@
 (ns httpeek.handler
   (:use compojure.core)
   (:require [ring.util.response :as response]
-            [compojure.route :as route]))
+            [compojure.route :as route]
+            [httpeek.views.content :as content]
+            [httpeek.bin :as bin]
+            [httpeek.request :as req]))
 
-(def bins (ref {}))
-
-(def id-counter (atom 0))
-
-(defn add-new-bin [_]
-  (let [id (swap! id-counter inc)
-        id (Long/toString id 36)
-        bin-url (str "/bin/" id)]
-    (dosync (alter bins assoc bin-url {}))))
-
-(defn new-bin-handler [request]
-  (add-new-bin (:uri request))
-  {:status 201 :headers {}})
-
+(defn new-bin-handler []
+  (bin/create)
+  (let [bin-id (:id (first (bin/last-inserted)))]
+  (response/redirect (str "bin/" bin-id "?inspect"))))
 
 (defn bin-handler [request]
-  (let [params (:query-string request)
-        url (:uri request)]
-  (if (= params "inspect")
-    (response/redirect (str url "?" params) 302))))
+ (if (= (:query-string request) "inspect")
+    (content/inspect))
+    (do (req/create)
+      (response/response "ok")))
+
 
 (defroutes app-routes
-           (GET "/" [_] (->(response/resource-response "index.html" {:root "public"})
-                         (response/content-type "text/html")))
-           (POST "/bins" request (new-bin-handler request))
-           (GET  "/bin/:id" request (bin-handler request))
-           (route/not-found "Page not Found"))
+           (GET "/" [] (content/index))
+           (POST "/bins" []  (new-bin-handler))
+           (GET "/bin/:id" request (bin-handler request))
+           (route/not-found (content/not-found)))
 
 (def app*
   app-routes)
