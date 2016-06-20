@@ -10,7 +10,8 @@
                  [org.clojure/java.jdbc "0.6.1"]
                  [org.postgresql/postgresql "9.4-1203-jdbc41"]
                  [hiccup "1.0.5"]
-                 [migratus "0.8.25"]]
+                 [migratus "0.8.25"]
+                 [cheshire "5.6.2"]]
   :profiles {:dev {:dependencies [[speclj "3.3.1"]]}}
   :plugins [[speclj "3.3.1"]
             [lein-ring "0.9.7"]
