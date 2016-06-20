@@ -3,26 +3,24 @@
   (:require [ring.util.response :as response]
             [compojure.route :as route]
             [httpeek.views.content :as content]
-            [httpeek.bin :as bin]
-            [httpeek.request :as req]))
+            [httpeek.db :as db]))
 
-(defn new-bin-handler []
-  (bin/create)
-  (let [bin-id (:id (first (bin/last-inserted)))]
-  (response/redirect (str "bin/" bin-id "?inspect"))))
+(defn create-bin []
+  (let [bin-id (db/create)]
+    (response/redirect (str "/bin/" bin-id "?inspect"))))
 
-(defn bin-handler [request]
- (if (= (:query-string request) "inspect")
-    (content/inspect))
-    (do (req/create)
-      (response/response "ok")))
-
+(defn handle-bin-get [request]
+  (if (some #(= (get-in request [:params :id]) %) (map #(str (:id %)) (db/all-bins)))
+    (if (= (:query-string request) "inspect")
+      (content/inspect)
+      (response/response"ok"))
+    (response/not-found (content/not-found))))
 
 (defroutes app-routes
-           (GET "/" [] (content/index))
-           (POST "/bins" []  (new-bin-handler))
-           (GET "/bin/:id" request (bin-handler request))
-           (route/not-found (content/not-found)))
+  (GET "/" [] (content/index))
+  (POST "/bins" [] (create-bin))
+  (GET "/bin/:id" request (handle-bin-get request))
+  (route/not-found (content/not-found)))
 
 (def app*
   app-routes)
