@@ -19,5 +19,11 @@
             request-count (count (db/all-requests))]
         (db/add-request bin-id request-body)
         (should= (+ 1 request-count)
-                 (count (db/all-requests)))))))
+                 (count (db/all-requests)))))
+
+    (it "should be associated with a current bin-id"
+      (let [bin-id (db/create)
+            request-body (json/generate-string (mock/request :get (str "/bin/" bin-id)))
+            request-id (db/add-request bin-id request-body)]
+        (should= bin-id (:bin_id (db/find-request request-id)))))))
 

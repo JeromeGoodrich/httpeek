@@ -21,4 +21,10 @@
     ["SELECT * FROM requests;"]))
 
 (defn add-request [bin-id body]
-  (j/query db (str "INSERT INTO requests(body, bin_id) VALUES('" body "', '" bin-id "') returning id;")))
+  (-> (j/query db (str "INSERT INTO requests(body, bin_id) VALUES('" body "', '" bin-id "') returning id;"))
+    first
+    :id))
+
+(defn find-request [id]
+  (-> (j/query db (str "SELECT * FROM requests WHERE id=" id";"))
+    first))
