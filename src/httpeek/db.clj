@@ -25,6 +25,5 @@
     first
     :id))
 
-(defn find-request [id]
-  (-> (j/query db (str "SELECT * FROM requests WHERE id=" id";"))
-    first))
+(defn find-requests-by [column value]
+  (j/query db (str "SELECT * FROM requests WHERE " column "='" value "';")))

@@ -14,9 +14,8 @@
     [:div
      [:h1 "Sorry! The Page You were looking for cannot be found"]]))
 
-(defn inspect []
+(defn inspect [requests]
   (page/html5
     [:div
-     [:h1 "hello world"]
-     (form/form-to [:post "/bins"]
-        (form/submit-button "create new request bin"))]))
+     [:h1 "YO"]]
+    [:div requests]))
