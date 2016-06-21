@@ -10,7 +10,6 @@
   (after (helper/reset-db))
 
   (context "GET /"
-
     (it "should return a status of 200"
       (let [response (app* (mock/request :get "/"))]
         (should= 200
@@ -40,26 +39,43 @@
           (should= 302 (:status response))
           (should= (format "/bin/%s?inspect" (:id bin)) (get-in response [:headers "Location"]))))))
 
-  (context  "GET /bin/:id"
-    (context "the bin exists and inspect params are provided"
+  (context  "ANY /bin/:id?inspect"
+    (context "GET request with existing bin"
       (it "returns a 200 status"
         (let  [bin-id (db/create)
                response (app* (mock/request :get (str "/bin/" bin-id) "inspect"))]
           (should= 200 (:status response)))))
 
-    (context "the bin exists and inspect params are not given"
+    (context "GET request with non-existent bin"
+      (it "returns a 404 status"
+        (let  [response (app* (mock/request :get "/bin/not-an-id" "inspect"))]
+          (should= 404 (:status response))))))
+
+    (context "Other requests with non-existent bin"
+      (it "returns a 404 status"
+        (let  [response (app* (mock/request :patch (str "/bin/not-an-id") "inspect"))]
+          (should= 404 (:status response)))))
+
+  (context "ANY /bin/:id"
+    (context "GET request with existing bin"
       (it "returns a status of 200"
         (let [bin-id (db/create)
               response (app* (mock/request :get (str "/bin/" bin-id)))]
-          (should= 200 (:status response)))))))
+          (should= 200 (:status response)))))
 
-    (context "the bin does not exist and inspect params are provided"
-      (it "returns a 404 status"
-        (let  [response (app* (mock/request :get "/bin/not-an-id" "inspect"))]
-          (should= 404 (:status response))))
+    (context "Other request with existing bin"
+      (it "returns a status of 200"
+        (let [bin-id (db/create)
+              response (app* (mock/request :post (str "/bin/" bin-id)))]
+          (should= 200 (:status response)))))
 
-    (context "the bin does not exist and inspect params are not given"
+    (context "GET request with non-existent bin"
       (it "returns a 404 status"
-        (db/create)
         (let  [response (app* (mock/request :get "/bin/not-an-id"))]
-          (should= 404 (:status response))))))
+          (should= 404 (:status response)))))
+
+    (context "Other requests with existing bin"
+      (it "returns a 404 status"
+        (let  [response (app* (mock/request :put (str "/bin/not-an-id")))]
+          (should= 404 (:status response)))))))
+

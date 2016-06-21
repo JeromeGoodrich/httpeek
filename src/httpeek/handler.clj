@@ -5,7 +5,6 @@
             [compojure.route :as route]
             [httpeek.views.content :as content]
             [httpeek.db :as db]
-            [ring.middleware.json :as ring-json]
             [cheshire.core :as json]))
 
 (defn create-bin []
@@ -23,7 +22,7 @@
 (defroutes app-routes
   (GET "/" [] (content/index))
   (POST "/bins" [] (create-bin))
-  (GET "/bin/:id" request (handle-bin-get request))
+  (ANY "/bin/:id" request (handle-bin-get request))
   (route/not-found (content/not-found)))
 
 (def app*
