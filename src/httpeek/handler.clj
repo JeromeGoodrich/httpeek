@@ -1,30 +1,38 @@
 (ns httpeek.handler
   (:use compojure.core)
   (:require [ring.util.response :as response]
-            [ring.util.request :as req]
             [compojure.route :as route]
-            [httpeek.views.content :as content]
-            [httpeek.db :as db]
-            [cheshire.core :as json]))
+            [httpeek.core :as core]
+            [httpeek.views.content :as content]))
 
-(defn create-bin []
-  (let [bin-id (db/create)]
-    (response/redirect (str "/bin/" bin-id "?inspect"))))
+(defn parse-bin-request [request]
+  (let [parsed-request {}
+        id (get-in request [:params :id])
+        inspect (= (:query-string request) "inspect")
+        body (dissoc request :body)]
+    (assoc parsed-request :id id :inspect inspect :body body)))
+
+(defn add-request-to-bin [id request-body]
+    (core/add-request id request-body)
+    (response/response "ok"))
+
+(defn set-response-for-bin [id inspect body]
+  (if (core/is-valid-id? id)
+    (if inspect
+      (content/inspect (core/get-requests id))
+      (add-request-to-bin id body))
+    (response/not-found (content/not-found))))
 
 (defn handle-bin-get [request]
-  (if (some #(= (get-in request [:params :id]) %) (map #(str (:id %)) (db/all-bins)))
-    (if (= (:query-string request) "inspect")
-      (content/inspect (db/find-requests-by "bin_id" (java.util.UUID/fromString (get-in request [:params :id]))))
-      (do (db/add-request (get-in request [:params :id]) (json/generate-string (dissoc request :body)))
-          (response/response"ok")))
-    (response/not-found (content/not-found))))
+  (set-response-for-bin (:id request)
+                        (:inspect request)
+                        (:body request)))
 
 (defroutes app-routes
   (GET "/" [] (content/index))
-  (POST "/bins" [] (create-bin))
-  (ANY "/bin/:id" request (handle-bin-get request))
+  (POST "/bins" [] (response/redirect (format "/bin/%s?inspect" (core/create-bin))))
+  (ANY "/bin/:id" request (handle-bin-get (parse-bin-request request)))
   (route/not-found (content/not-found)))
 
 (def app*
   app-routes)
-

@@ -25,5 +25,5 @@
       (let [bin-id (db/create)
             request-body (json/generate-string (mock/request :get (str "/bin/" bin-id)))
             request-id (db/add-request bin-id request-body)]
-        (should= bin-id (:bin_id (first (db/find-requests-by "id" request-id))))))))
+        (should= bin-id (:bin_id (first (db/find-by "requests" "id" request-id))))))))
 
