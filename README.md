@@ -7,5 +7,3 @@ and then allows you to see those requests in a friendly UI and return customizab
 
 *Note: not functional yet*
 
-- Leinegen necessary
-- use lein run to start
