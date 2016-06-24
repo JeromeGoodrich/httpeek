@@ -1,11 +1,21 @@
 (ns httpeek.db
-  (:require [clojure.java.jdbc :as j]))
+  (:require [clojure.java.jdbc :as j]
+            [cheshire.core :as json]))
 
 (def db {:classname "com.postgresql.jdbc.Driver"
          :subprotocol "postgresql"
          :subname "//localhost:5432/httpeek"
          :user "httpeek"
          :password ""})
+
+(extend-protocol j/IResultSetReadColumn
+  org.postgresql.util.PGobject
+  (result-set-read-column [pgobj metadata idx]
+    (let [type  (.getType pgobj)
+          value (.getValue pgobj)]
+      (case type
+        "jsonb" (json/decode value true)
+        :else value))))
 
 (defn create []
   (-> (j/query db "INSERT INTO bins DEFAULT VALUES returning id;")
