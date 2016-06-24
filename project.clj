@@ -17,7 +17,7 @@
             [lein-ring "0.9.7"]
             [migratus-lein "0.3.7"]]
   :test-paths ["spec"]
-  :ring {:handler httpeek.handler/app*}
+  :ring {:handler httpeek.handler/app* :auto-refresh? true}
   :migratus {:store :database
            :migration-dir "migrations"
            :db {:classname "com.postgresql.jdbc.Driver"
