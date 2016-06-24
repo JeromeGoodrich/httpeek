@@ -16,3 +16,6 @@
 
 (defn add-request [id request-body]
   (db/add-request id (json/generate-string request-body)))
+
+(defn all-bins []
+  (db/all-bins))
