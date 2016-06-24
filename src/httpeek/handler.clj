@@ -3,7 +3,7 @@
   (:require [ring.util.response :as response]
             [compojure.route :as route]
             [httpeek.core :as core]
-            [httpeek.views.content :as content]))
+            [httpeek.views :as views]))
 
 (defn parse-bin-request [request]
   (let [parsed-request {}
@@ -19,9 +19,9 @@
 (defn set-response-for-bin [id inspect body]
   (if (core/is-valid-id? id)
     (if inspect
-      (content/inspect (core/get-requests id))
+      (views/layout (views/inspect id (core/get-requests id)))
       (add-request-to-bin id body))
-    (response/not-found (content/not-found))))
+    (response/not-found (views/not-found))))
 
 (defn handle-bin-get [request]
   (set-response-for-bin (:id request)
@@ -29,10 +29,11 @@
                         (:body request)))
 
 (defroutes app-routes
-  (GET "/" [] (content/index))
+  (GET "/" [] (views/layout (views/index)))
   (POST "/bins" [] (response/redirect (format "/bin/%s?inspect" (core/create-bin))))
   (ANY "/bin/:id" request (handle-bin-get (parse-bin-request request)))
-  (route/not-found (content/not-found)))
+  (route/resources "/")
+  (route/not-found (views/not-found)))
 
 (def app*
   app-routes)

@@ -1,0 +1,22 @@
+.index-card.mdl-card {
+  margin: 5rem auto 2rem auto;
+  width: 1000px;
+}
+
+.index-card.mdl-card__title {
+  color: #fff;
+  height: 176px;
+}
+
+.mdl-layout__content {
+  width: 100%
+}
+
+.bin-title {
+  text-align: center
+}
+
+.request-card.mdl-card {
+  margin: 2rem auto 2rem auto;
+  width: 80%;
+}
