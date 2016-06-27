@@ -1,12 +1,14 @@
 (ns httpeek.db
   (:require [clojure.java.jdbc :as j]
-            [cheshire.core :as json]))
+            [cheshire.core :as json]
+            [environ.core :refer [env]]))
 
-(def db {:classname "com.postgresql.jdbc.Driver"
-         :subprotocol "postgresql"
-         :subname "//localhost:5432/httpeek"
-         :user "httpeek"
-         :password ""})
+(def db
+  {:classname (env :db-classname)
+   :subprotocol (env :db-subprotocol)
+   :subname (env :db-subname)
+   :user (env :db-user)
+   :password (env :db-password)})
 
 (extend-protocol j/IResultSetReadColumn
   org.postgresql.util.PGobject
