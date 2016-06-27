@@ -5,5 +5,11 @@ and then allows you to see those requests in a friendly UI and return customizab
 
 ## Installation
 
-*Note: not functional yet*
+Clone the repo
+`git clone http://github.com/Jgoodrich07/httpeek`
+
+You will need to have Leinegen installed.
+
+To run the server: `lein ring server` Server is configured to auto-reload
+To run the specs: `lein with-profile test spec -a`
 
