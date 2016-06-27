@@ -5,18 +5,18 @@
             [httpeek.core :as core]
             [httpeek.views :as views]))
 
-(defn parse-bin-request [request]
+(defn- parse-bin-request [request]
   (let [parsed-request {}
         id (get-in request [:params :id])
         inspect (= (:query-string request) "inspect")
         body (dissoc request :body)]
     (assoc parsed-request :id id :inspect inspect :body body)))
 
-(defn add-request-to-bin [id request-body]
+(defn- add-request-to-bin [id request-body]
     (core/add-request id request-body)
     (response/response "ok"))
 
-(defn set-response-for-bin [id inspect body]
+(defn- set-response-for-bin [id inspect body]
   (if (core/is-valid-id? id)
     (if inspect
       (views/layout (views/inspect id (core/get-requests id)))
