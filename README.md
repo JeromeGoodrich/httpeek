@@ -12,32 +12,8 @@ You will need to have Leinegen installed.
 
 ###Setting up the database
 
-you will need to create a database to use with the app.
-
-
-The profiles.clj file dictates the configuration map for a Postgres database using the
-jdbc driver. the `env` key is what the environ library uses to store configuration data
-specific to different profiles. In order to use the app your database will have to match
-the configuration below.
-
-
-```clojure
-
-{:dev {:env {:db-classname "com.postgresql.jdbc.Driver"
-            :db-subprotocol "postgresql"
-            :db-subname "//localhost:5432/httpeek"
-            :db-password ""
-            :db-user "httpeek"}}
-:test {:env {:db-classname "com.postgresql.jdbc.Driver"
-             :db-subprotocol "postgresql"
-             :db-subname "//localhost:5432/httpeek_spec"
-             :db-password ""
-             :db-user "httpeek_spec"}}}
-```
-
-###Migrating the database
-
-Once your databases are set-up you will need to migrate them using the following commands
+just run this `bin/create_db.sh`
+Once your databases are set-up you can  migrate them using the following commands
 
 For the test db: `lein with-profile test migrate`
 For the dev db: `lein migrate`

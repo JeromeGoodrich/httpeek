@@ -5,7 +5,7 @@
 
 (def config {:store :database
              :migration-dir "migrations"
-             :db db/db
+             :db db/db})
 
 (defn migrate []
   (m/migrate config))
