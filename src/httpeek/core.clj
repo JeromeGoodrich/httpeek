@@ -1,21 +1,29 @@
 (ns httpeek.core
-  (:require [httpeek.db :as db]
-            [cheshire.core :as json]))
+  (:require [httpeek.db :as db]))
 
 (defn create-bin []
-  (db/create))
+  (db/create-bin))
 
-(defn- str-to-uuid [uuid-string]
-  (java.util.UUID/fromString uuid-string))
-
-(defn is-valid-id? [string-id]
-  (boolean (some #(= string-id %)(map #(str (:id %))(db/all-bins)))))
+(defn find-bin-by-id [id]
+  (try
+    (db/find-bin-by-id id)
+    (catch Throwable e
+      nil)))
 
 (defn get-requests [bin-id]
-  (db/find-by "requests" "bin_id" (str-to-uuid bin-id)))
+  (try
+    (db/find-requests-by-bin-id bin-id)
+    (catch Throwable e
+      nil)))
 
-(defn add-request [id request-body]
-  (db/add-request id (json/generate-string request-body)))
+(defn add-request [bin-id full-json-request]
+  (try
+    (db/add-request bin-id full-json-request)
+    (catch Throwable e
+      nil)))
 
 (defn all-bins []
   (db/all-bins))
+
+(defn all-requests []
+  (db/all-requests))
