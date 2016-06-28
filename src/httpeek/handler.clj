@@ -13,11 +13,10 @@
       nil)))
 
 (defn- parse-bin-request [request]
-  (let [parsed-request {}
-        id (str->uuid (get-in request [:params :id]))
+  (let [id (str->uuid (get-in request [:params :id]))
         inspect (= (:query-string request) "inspect")
         body (json/encode (dissoc request :body))]
-    (assoc parsed-request :id id :inspect inspect :body body)))
+    (assoc {} :id id :inspect inspect :body body)))
 
 (defn- add-request-to-bin [id request-body]
   (core/add-request id request-body)
@@ -39,7 +38,6 @@
   (->> (core/create-bin)
     (format "/bin/%s?inspect")
     (response/redirect)))
-
 
 (defroutes app-routes
   (GET "/" [] (views/index-page))
