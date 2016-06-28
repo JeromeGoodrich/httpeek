@@ -19,7 +19,7 @@
         "jsonb" (json/decode value true)
         :else value))))
 
-(defn create []
+(defn create-bin []
   (-> (j/query db "INSERT INTO bins DEFAULT VALUES returning id;")
     first
     :id))
@@ -32,10 +32,18 @@
   (j/query db
     ["SELECT * FROM requests;"]))
 
-(defn add-request [bin-id body]
-  (-> (j/query db (str "INSERT INTO requests(body, bin_id) VALUES('" body "', '" bin-id "') returning id;"))
+(defn add-request [bin-id full-request]
+  (-> (j/query db (str "INSERT INTO requests(full_request, bin_id) VALUES('" full-request "', '" bin-id "') returning id;"))
     first
     :id))
 
-(defn find-by [table column value]
-  (j/query db (str "SELECT * FROM " table " WHERE " column "='" value "';")))
+(defn find-bin-by-id [id]
+  (-> (j/query db (str "SELECT * FROM bins WHERE id='"id "';"))
+    first))
+
+(defn find-request-by-id [id]
+  (-> (j/query db (str "SELECT * FROM requests WHERE id='"id "';"))
+    first))
+
+(defn find-requests-by-bin-id [bin-id]
+  (j/query db (str "SELECT * FROM requests WHERE bin_id='"bin-id "';")))

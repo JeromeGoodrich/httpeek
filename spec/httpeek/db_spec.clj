@@ -1,29 +1,51 @@
 (ns httpeek.db-spec
   (require [speclj.core :refer :all]
-           [ring.mock.request :as mock]
-           [httpeek.db :as db]
+           [httpeek.db :refer :all]
+           [httpeek.spec-helper :as helper]
            [cheshire.core :as json]))
 
-(describe "db operations"
+(describe "httpeek.db"
+  (after (helper/reset-db))
+
   (context "a bin is created successfully"
     (it "adds a new bin record to the bin table"
-      (let [bin-count (count (db/all-bins))]
-        (db/create)
+      (let [bin-count (count (all-bins))
+            bin-id(create-bin)]
         (should= (+ 1 bin-count)
-                 (count (db/all-bins))))))
+                 (count (all-bins))))))
 
-  (context "a successful request"
+  (context "the requested bin is found"
+    (it "finds a created bin using the bin's id"
+      (let [bin-id (create-bin)]
+        (should= bin-id (:id (find-bin-by-id bin-id))))))
+
+  (context "a request is created successfully"
     (it "adds a request to an existing bin"
-      (let [bin-id (db/create)
-            request-body (json/generate-string (mock/request :get (str "/bin/" bin-id)))
-            request-count (count (db/all-requests))]
-        (db/add-request bin-id request-body)
+      (let [bin-id (create-bin)
+            full-request (json/encode {:foo "bar"})
+            request-count (count (all-requests))]
+        (let [request-id (add-request bin-id full-request)]
         (should= (+ 1 request-count)
-                 (count (db/all-requests)))))
+                 (count (all-requests))))))
+
+    (it "has the correct details"
+      (let [bin-id (create-bin)
+            full-request (json/encode {:foo "bar"})
+            request-id (add-request bin-id (json/encode full-request))
+            request (find-request-by-id request-id)]
+        (should= request-id (:id request))
+        (should= full-request (:full_request request))
+        (should= bin-id (:bin_id request))))
 
     (it "should be associated with a current bin-id"
-      (let [bin-id (db/create)
-            request-body (json/generate-string (mock/request :get (str "/bin/" bin-id)))
-            request-id (db/add-request bin-id request-body)]
-        (should= bin-id (:bin_id (first (db/find-by "requests" "id" request-id))))))))
+      (let [bin-id (create-bin)
+            first-request-id (add-request bin-id (json/encode {:position "first"}))
+            second-request-id (add-request bin-id (json/encode {:position "second"}))
+            requests (find-requests-by-bin-id bin-id)]
+        (should= 2 (count requests))
+        (should= first-request-id (:id (first requests)))
+        (should= {:position "first"} (:full_request (first requests)))
+        (should= second-request-id (:id (second requests)))
+        (should= {:position "second"} (:full_request (second requests)))
+        ))))
 
