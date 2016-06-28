@@ -3,37 +3,52 @@
   (:require [ring.util.response :as response]
             [compojure.route :as route]
             [httpeek.core :as core]
+            [cheshire.core :as json]
             [httpeek.views :as views]))
+
+(defn- str->uuid [uuid-string]
+  (try
+    (java.util.UUID/fromString uuid-string)
+    (catch java.lang.IllegalArgumentException _
+      nil)))
 
 (defn- parse-bin-request [request]
   (let [parsed-request {}
-        id (get-in request [:params :id])
+        id (str->uuid (get-in request [:params :id]))
         inspect (= (:query-string request) "inspect")
-        body (dissoc request :body)]
+        body (json/encode (dissoc request :body))]
     (assoc parsed-request :id id :inspect inspect :body body)))
 
 (defn- add-request-to-bin [id request-body]
-    (core/add-request id request-body)
-    (response/response "ok"))
+  (core/add-request id request-body)
+  (response/response "ok"))
 
 (defn- set-response-for-bin [id inspect body]
-  (if (core/is-valid-id? id)
+  (if-let [bin-id (:id (core/find-bin-by-id id))]
     (if inspect
-      (views/layout (views/inspect id (core/get-requests id)))
-      (add-request-to-bin id body))
-    (response/not-found (views/not-found))))
+      (views/inspect-bin-page bin-id (core/get-requests bin-id))
+      (add-request-to-bin bin-id body))
+    (response/not-found (views/not-found-page))))
 
-(defn handle-bin-get [request]
+(defn handle-getting-bin [request]
   (set-response-for-bin (:id request)
                         (:inspect request)
                         (:body request)))
 
+(defn handle-creating-bin []
+  (->> (core/create-bin)
+    (format "/bin/%s?inspect")
+    (response/redirect)))
+
+
 (defroutes app-routes
-  (GET "/" [] (views/layout (views/index)))
-  (POST "/bins" [] (response/redirect (format "/bin/%s?inspect" (core/create-bin))))
-  (ANY "/bin/:id" request (handle-bin-get (parse-bin-request request)))
+  (GET "/" [] (views/index-page))
+  (POST "/bins" [] (handle-creating-bin))
+  (ANY "/bin/:id" request (-> request
+                            (parse-bin-request)
+                            (handle-getting-bin)))
   (route/resources "/")
-  (route/not-found (views/not-found)))
+  (route/not-found (views/not-found-page)))
 
 (def app*
   app-routes)
