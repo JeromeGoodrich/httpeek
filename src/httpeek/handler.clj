@@ -7,10 +7,8 @@
             [httpeek.views :as views]))
 
 (defn- str->uuid [uuid-string]
-  (try
-    (java.util.UUID/fromString uuid-string)
-    (catch java.lang.IllegalArgumentException _
-      nil)))
+  (core/with-error-handling nil
+    (java.util.UUID/fromString uuid-string)))
 
 (defn- parse-bin-request [request]
   (let [id (str->uuid (get-in request [:params :id]))
