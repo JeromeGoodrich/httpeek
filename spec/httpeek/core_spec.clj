@@ -72,8 +72,8 @@
         (add-request bin-id (json/encode {:fizz "buzz"}))
         (should= 2 (count (get-requests bin-id)))))
 
-    (it "returns nil if the bin doesn't exist"
+    (it "returns an empty vector if the bin doesn't exist"
       (let [bin-id "not a valid id"]
         (add-request bin-id {:foo "bar"})
         (add-request bin-id {:fizz "buzz"})
-        (should-be-nil (get-requests bin-id))))))
+        (should= [] (get-requests bin-id))))))

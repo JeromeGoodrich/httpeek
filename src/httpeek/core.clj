@@ -1,11 +1,11 @@
-( httpeek.core
+(ns httpeek.core
   (:require [httpeek.db :as db]))
 
 (defmacro with-error-handling [default fn]
-  (try
-    fn
-    (catch Exception e
-      default)))
+  `(try
+    ~fn
+    (catch Exception e#
+      ~default)))
 
 (defn create-bin []
   (db/create-bin))
