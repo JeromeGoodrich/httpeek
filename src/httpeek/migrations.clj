@@ -1,14 +1,11 @@
 (ns httpeek.migrations
   (require [migratus.core :as m]
-           [environ.core :refer [env]]))
+           [environ.core :refer [env]]
+           [httpeek.db :as db]))
 
 (def config {:store :database
              :migration-dir "migrations"
-             :db {:classname (env :db-classname)
-                  :subprotocol (env :db-subprotocol)
-                  :subname (env :db-subname)
-                  :user (env :db-user)
-                  :password (env :db-password)}})
+             :db db/db
 
 (defn migrate []
   (m/migrate config))
