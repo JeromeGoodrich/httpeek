@@ -1,9 +1,6 @@
 (ns httpeek.views
   (require [hiccup.page :as page]
-           [hiccup.form :as form]
            [httpeek.core :as core]
-           [cheshire.core :as json]
-           [hiccup.element :as elem]
            [hiccup.core :as h]))
 
 (defn navbar []
@@ -13,7 +10,7 @@
      [:span.mdl-layout-title (h/h "HTTPeek")]
      [:div.mdl-layout-spacer]
      [:nav.mdl-navigation
-      [:a.mdl-navigation__link {:href "/"} (h/h "Home")]]]]
+      [:a.mdl-navigation__link {:href (h/h "/")} (h/h "Home")]]]]
    [:div.mdl-layout__drawer
     [:span.mdl-layout-title (h/h "HTTPeek")]
     [:nav.mdl-navigation.mdl-layout--large-screen-only
@@ -45,7 +42,7 @@
    (let [list-of-ids (map :id (core/all-bins))]
      (for [id list-of-ids]
        [:li
-        [:a.mdl-button.mdl-button--colored  {:href (str "/bin/" id "?inspect")} (h/h (str "Bin: " id))]]))])
+        [:a.mdl-button.mdl-button--colored  {:href (h/h (str "/bin/" id "?inspect"))} (h/h (str "Bin: " id))]]))])
 
 (defn history-card []
   [:div.index-card.mdl-card.mdl-shadow--2dp
@@ -59,13 +56,9 @@
    (map (fn [[k v]] [:li.mdl-list__item (str (name k) ": " v)]) headers)])
 
 (defn request-card [request]
-  (let [created_at (:created_at request)
-        headers (:headers (:body request))
-        content-length (:content-length (:body request))
-        form-params (:form-params (:body request))
-        query-params (:query-params (:body request))
-        uri (:uri (:body request))
-        request-method (:request-method (:body request))]
+  (let [{:keys [created_at]} request
+        {{:keys [headers content-length form-params
+                 query-params uri request-method]} :full_request} request]
     [:div.request-card.mdl-card.mdl-shadow--2dp
      [:div.mdl-card__title
       [:h2.mdl-card__title-text (h/h (str request-method))]
@@ -73,23 +66,23 @@
      [:div.mdl-card__supporting-text (h/h (str created_at))]
      [:div.mdl-card__actions.mdl-card--border
       [:div.mdl-grid
-       [:div.mdl-cell.mdl-cell--4-col (str "Form/Post Params")]
-       [:div.mdl-cell.mdl-cell--6-col (str "Headers")]]
+       [:div.mdl-cell.mdl-cell--4-col (h/h (str "Form/Post Params"))]
+       [:div.mdl-cell.mdl-cell--6-col (h/h (str "Headers"))]]
       [:div.mdl-grid
-       [:div.mdl-cell.mdl-cell--4-col (str form-params)]
+       [:div.mdl-cell.mdl-cell--4-col (h/h (str form-params))]
        [:div.mdl-cell.mdl-cell--6-col (list-headers headers)]]]]))
 
-(defn index []
+(defn index-html []
   [:body
    (navbar)
    [:main.mdl-layout__content
     (index-card)
     (history-card)]])
 
-(defn not-found []
+(defn not-found-html []
   (page/html5
     [:div
-     [:h1 "Sorry! The Page You were looking for cannot be found"]]))
+     [:h1 (h/h "Sorry! The Page You were looking for cannot be found")]]))
 
 (defn code-example-card []
   [:div.index-card.mdl-card.mdl-shadow--2dp
@@ -98,7 +91,7 @@
    [:div.mdl-card__actions.mdl-card--border
     [:code (h/h "curl -X POST -d foo=bar 'this bin url'")]]])
 
-(defn inspect [id requests]
+(defn inspect-html [id requests]
   [:body
    (navbar)
    [:main.mdl-layout__content
@@ -108,8 +101,17 @@
      (for [request requests]
        (request-card request)))])
 
-(defn layout [component]
+(defn wrap-layout [component]
   (page/html5
     (head)
     component
     (footer)))
+
+(defn index-page []
+  (wrap-layout (index-html )))
+
+(defn inspect-bin-page [bin-id requests]
+  (wrap-layout (inspect-html bin-id requests)))
+
+(defn not-found-page []
+  (wrap-layout (not-found-html)))
