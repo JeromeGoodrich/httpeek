@@ -1,9 +1,9 @@
 (ns httpeek.core
   (:require [httpeek.db :as db]))
 
-(defmacro with-error-handling [default fn]
+(defmacro with-error-handling [default form]
   `(try
-    ~fn
+    ~form
     (catch Exception e#
       ~default)))
 
