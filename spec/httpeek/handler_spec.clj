@@ -32,14 +32,14 @@
   (context  "ANY /bin/:id?inspect"
     (context "GET request with existing bin and no requests"
       (it "returns a 200 status"
-        (let  [bin-id (core/create-bin)
+        (let  [bin-id (core/create-bin false)
                response (app* (mock/request :get (str "/bin/" bin-id) "inspect"))]
           (should= 200 (:status response))
           (should-contain "curl -X" (:body response)))))
 
     (context "GET request with existing bin and request added"
       (it "returns a 200 status"
-        (let  [bin-id (core/create-bin)
+        (let  [bin-id (core/create-bin false)
                valid-request (app* (mock/header (mock/request :get (str "/bin/" bin-id)) :foo "bar"))
                response (app* (mock/request :get (str "/bin/" bin-id) "inspect"))]
           (should= 200 (:status response))
@@ -58,13 +58,13 @@
   (context "ANY /bin/:id"
     (context "GET request with existing bin"
       (it "returns a status of 200"
-        (let [bin-id (core/create-bin)
+        (let [bin-id (core/create-bin false)
               response (app* (mock/request :get (str "/bin/" bin-id)))]
           (should= 200 (:status response)))))
 
     (context "Other request with existing bin"
       (it "returns a status of 200"
-        (let [bin-id (core/create-bin)
+        (let [bin-id (core/create-bin false)
               response (app* (mock/request :post (str "/bin/" bin-id)))]
           (should= 200 (:status response)))))
 
