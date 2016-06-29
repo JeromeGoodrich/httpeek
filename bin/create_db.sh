@@ -21,8 +21,8 @@ setup_db() {
 setup_procedure() {
   echo "Setting up the project..."
 
-  setup_db admin test
-  setup_db admin dev
+  setup_db httpeek_spec test
+  setup_db httpeek dev
 
   echo "Done. You should now be able to run specs, start the server, etc."
 }
