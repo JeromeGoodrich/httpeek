@@ -61,4 +61,3 @@
         (should= second-request-id (:id (second requests)))
         (should= {:position "second"} (:full_request (second requests)))
         ))))
-

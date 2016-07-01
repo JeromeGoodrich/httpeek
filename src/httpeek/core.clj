@@ -8,7 +8,7 @@
       ~default)))
 
 (defn create-bin [private-bin?]
-  (db/create-bin private-bin?))
+  (db/create-bin (:private private-bin?)))
 
 (defn find-bin-by-id [id]
   (with-error-handling nil
