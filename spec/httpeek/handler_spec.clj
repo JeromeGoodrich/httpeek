@@ -13,13 +13,13 @@
     (it "should return a status of 200"
       (let [response (app* (mock/request :get "/"))]
         (should= 200
-               (:status response)))))
+                 (:status response)))))
 
   (context "Not Found"
     (it "returns a status of 404"
       (let [response (app* (mock/request :get "/foo"))]
         (should= 404
-               (:status response)))))
+                 (:status response)))))
 
   (context "POST /bins"
     (context "a bin is created successfully"
@@ -30,27 +30,48 @@
           (should= (format "/bin/%s?inspect" (:id bin)) (get-in response [:headers "Location"]))))))
 
   (context  "ANY /bin/:id?inspect"
-    (context "GET request with existing bin and no requests"
+    (context "getting an existing private bin with no requests"
       (it "returns a 200 status"
-        (let  [bin-id (core/create-bin)
-               response (app* (mock/request :get (str "/bin/" bin-id) "inspect"))]
-          (should= 200 (:status response))
-          (should-contain "curl -X" (:body response)))))
+        (let  [bin-id (core/create-bin {:private true})]
+          (let [response (app-routes (assoc (mock/request :get (str "/bin/" bin-id) "inspect") :session {:private-bins [bin-id]}))]
+            (should= 200 (:status response))
+            (should-contain "curl -X" (:body response))))))
 
-    (context "GET request with existing bin and request added"
+    (context "getting an existing public bin with no requests"
       (it "returns a 200 status"
-        (let  [bin-id (core/create-bin)
-               valid-request (app* (mock/header (mock/request :get (str "/bin/" bin-id)) :foo "bar"))
-               response (app* (mock/request :get (str "/bin/" bin-id) "inspect"))]
+        (let  [bin-id (core/create-bin {:private false})]
+          (let [response (app-routes (mock/request :get (str "/bin/" bin-id) "inspect"))]
+            (should= 200 (:status response))
+            (should-contain "curl -X" (:body response))))))
+
+    (context "attempting to access private bin from a different session"
+      (it "returns a 403 status"
+        (let  [bin-id (core/create-bin {:private true})
+               response (app-routes (mock/request :get (str "/bin/" bin-id) "inspect"))]
+          (should= 403 (:status response)))))
+
+    (context "getting an existing private bin with request added"
+      (it "returns a 200 status"
+        (let  [bin-id (core/create-bin {:private true})
+               valid-request (app-routes (mock/header (mock/request :get (str "/bin/" bin-id)) :foo "bar"))
+               response (app-routes (assoc (mock/request :get (str "/bin/" bin-id) "inspect") :session {:private-bins [bin-id]}))]
           (should= 200 (:status response))
           (should-contain "foo: bar" (:body response)))))
 
-    (context "GET request with non-existent bin"
+    (context "getting an existing public bin with request added"
+      (it "returns a 200 status"
+        (let  [bin-id (core/create-bin {:private false})
+               valid-request (app-routes (mock/header (mock/request :get (str "/bin/" bin-id)) :foo "bar"))
+               response (app-routes (mock/request :get (str "/bin/" bin-id) "inspect"))]
+          (should= 200 (:status response))
+          (should-contain "foo: bar" (:body response)))))
+
+    (context "getting a non-existent bin"
       (it "returns a 404 status"
         (let  [response (app* (mock/request :get "/bin/not-an-id" "inspect"))]
           (should= 404 (:status response)))))
 
-    (context "Other requests with non-existent bin"
+    (context "submitting other requests to a non-existent bin"
       (it "returns a 404 status"
         (let  [response (app* (mock/request :patch (str "/bin/not-an-id") "inspect"))]
           (should= 404 (:status response))))))
@@ -58,13 +79,13 @@
   (context "ANY /bin/:id"
     (context "GET request with existing bin"
       (it "returns a status of 200"
-        (let [bin-id (core/create-bin)
+        (let [bin-id (core/create-bin {:private false})
               response (app* (mock/request :get (str "/bin/" bin-id)))]
           (should= 200 (:status response)))))
 
     (context "Other request with existing bin"
       (it "returns a status of 200"
-        (let [bin-id (core/create-bin)
+        (let [bin-id (core/create-bin {:private false})
               response (app* (mock/request :post (str "/bin/" bin-id)))]
           (should= 200 (:status response)))))
 
@@ -73,8 +94,7 @@
         (let  [response (app* (mock/request :get "/bin/not-an-id"))]
           (should= 404 (:status response)))))
 
-    (context "Other requests with existing bin"
+    (context "Other requests with non-existent bin"
       (it "returns a 404 status"
         (let  [response (app* (mock/request :put (str "/bin/not-an-id")))]
           (should= 404 (:status response)))))))
-

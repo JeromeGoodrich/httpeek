@@ -34,8 +34,9 @@
                                         and allow you to inspect those requests in a human friendly way.")]
    [:div.mdl-card__actions.mdl-card--border
     [:form {:action "/bins" :method "post"}
-     [:button.mdl-button.mdl.button--fab.mdl-button--colored (h/h "Create Bin")
-      [:i.material-icons (h/h "add")]]]]])
+     [:button.mdl-button.mdl.button--fab.mdl-button--colored {:type "submit"} (h/h "Create Bin")
+      [:i.material-icons (h/h "add")]]
+     [:input {:type "checkbox" :value "true" :name "private-bin-checkbox"}]]]])
 
 (defn list-bin-history []
   [:ul
