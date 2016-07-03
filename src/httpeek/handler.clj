@@ -20,9 +20,9 @@
       (if (and private? (not permitted?))
         (response/status (response/response "private bin") 403)
         (views/inspect-bin-page id (core/get-requests id)))
-    (response/not-found (views/not-found-page)))))
+      (response/not-found (views/not-found-page)))))
 
-(defn parse-request-to-bin [request]
+(defn- parse-request-to-bin [request]
   (let [id (str->uuid (get-in request [:params :id]))
         body (json/encode (dissoc request :body))
         requested-bin (core/find-bin-by-id id)]
@@ -33,24 +33,17 @@
   (core/add-request id request-body)
   (response/response "ok"))
 
-(defn route-request-to-bin [bin-id {:keys [inspect? private? permitted? body]}]
-  (if inspect?
-    (if (and private? (not permitted?))
-      (response/status (response/response "private bin") 403)
-      (views/inspect-bin-page bin-id (core/get-requests bin-id)))
-    (add-request-to-bin bin-id body)))
-
-(defn handle-requests-to-bin [{:keys [requested-bin body] :as parsed-request}]
+(defn- route-request-to-bin [{:keys [requested-bin body] :as parsed-request}]
   (if-let [bin-id (:id requested-bin)]
     (add-request-to-bin bin-id body)
     (response/not-found (views/not-found-page))))
 
 (defn handle-creating-bin [form-params]
-  (let [private? (boolean (get form-params "private-bin-checkbox"))
+  (let [private? (boolean (get form-params "private-bin?"))
         bin-id (core/create-bin {:private private?})]
     (if private?
       (-> (response/redirect (format "/bin/%s/inspect" bin-id))
-          (assoc-in [:session] {:private-bins [bin-id]}))
+        (assoc-in [:session] {:private-bins [bin-id]}))
       (response/redirect (format "/bin/%s/inspect" bin-id)))))
 
 (defn handle-deleting-bin [id]
@@ -61,19 +54,26 @@
    (response/redirect "/" 302))
  (response/not-found (views/not-found-page))))
 
+(defn handle-request-to-bin [request]
+  (-> request
+    (parse-request-to-bin)
+    (route-request-to-bin)))
+
+(defn handle-json-request-to-bin [id]
+  (-> id
+    str->uuid
+    core/find-bin-by-id
+    json/encode
+    response/response))
+
 (defroutes app-routes
   (GET "/" [] (views/index-page))
   (POST "/bins" {form-params :form-params} (handle-creating-bin form-params))
   (GET "/bin/:id/inspect" [id :as {session :session}] (handle-inspecting-bin (str->uuid id) session))
-  (ANY "/bin/:id" request (-> request
-                            (parse-request-to-bin)
-                            (handle-requests-to-bin)))
+  (ANY "/bin/:id" req (handle-request-to-bin req))
   (DELETE "/bin/:id/delete" [id] (handle-deleting-bin id))
-  (GET "/api/bins/:id" [id] (-> id
-                                str->uuid
-                                core/find-bin-by-id
-                                json/encode
-                                response/response))
+  (context "/api" []
+    (GET "/bins/:id" [id] (handle-json-request-to-bin id)))
   (route/resources "/")
   (route/not-found (views/not-found-page)))
 
