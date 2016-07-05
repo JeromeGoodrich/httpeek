@@ -50,11 +50,11 @@
 
 (defn handle-deleting-bin [id]
   (if (core/find-bin-by-id id)
-   (do (-> id
-    str->uuid
-    (core/delete-bin))
-   (response/redirect "/" 302))
- (response/not-found (views/not-found-page))))
+    (do (-> id
+          str->uuid
+          (core/delete-bin))
+      (response/redirect "/" 302))
+    (response/not-found (views/not-found-page))))
 
 (defn handle-request-to-bin [request]
   (-> request
@@ -62,17 +62,20 @@
     (route-request-to-bin)))
 
 (defn handle-json-request-to-bin [id]
-  (-> id
-    str->uuid
-    core/find-bin-by-id
-    json/encode
-    response/response))
+  (assoc-in (-> id
+              str->uuid
+              core/find-bin-by-id
+              json/encode
+              response/response) [:headers "Content-Type"] "application/json"))
 
 (defn handle-json-create-bin [{:strs [host] :as headers}]
   (let [bin-id (core/create-bin {:private false})]
     (assoc-in (response/response (json/encode {:bin-url (format "http://%s/bin/%s" host bin-id)
-                        :inspect-url (format "http://%s/bin/%s/inspect" host bin-id)
-                        :delete-url (format "http://%s/bin/%s/delete" host bin-id)})) [:headers "Content-Type"] "application/json")))
+                                               :inspect-url (format "http://%s/bin/%s/inspect" host bin-id)
+                                               :delete-url (format "http://%s/bin/%s/delete" host bin-id)}))
+              [:headers "Content-Type"]
+              "application/json")))
+
 (defroutes app-routes
   (GET "/" [] (views/index-page))
   (POST "/bins" {form-params :form-params} (handle-creating-bin form-params))
@@ -88,5 +91,4 @@
 (def app*
   (-> app-routes
     (middleware/wrap-params)
-    (ring-json/wrap-json-body)
     (session/wrap-session)))

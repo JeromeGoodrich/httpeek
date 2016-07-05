@@ -16,6 +16,7 @@
               bin-id (->> (core/all-bins) (sort-by :creaed-at) last :id)
               body  (json/decode (:body response))]
           (should= 200 (:status response))
+          (should= "application/json" (get-in response [:headers "Content-Type"]))
           (should= (format "http://localhost/bin/%s" bin-id) (get body "bin-url")))))
 
     (context "GET /bins/:id"
@@ -24,6 +25,7 @@
               response (app* (mock/request :get (format "/api/bins/%s" id)))
               body (json/decode (:body response))]
           (should= 200 (:status response))
+          (should= "application/json" (get-in response [:headers "Content-Type"]))
           (should= (str id) (get body "id"))))))
 
   (context "GET /"
