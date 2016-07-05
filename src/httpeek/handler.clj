@@ -15,66 +15,88 @@
                             (java.util.UUID/fromString uuid-string)))
 
 (defn handle-inspecting-bin [id session]
-  (let [requested-bin (core/find-bin-by-id id)
-        private? (:private requested-bin)
-        permitted? (some #{id} (:private-bins session))]
-    (if requested-bin
-      (if (and private? (not permitted?))
-        (response/status (response/response "private bin") 403)
-        (views/inspect-bin-page id (core/get-requests id)))
-      (response/not-found (views/not-found-page)))))
+(let [requested-bin (core/find-bin-by-id id)
+      private? (:private requested-bin)
+      permitted? (some #{id} (:private-bins session))]
+  (if requested-bin
+    (if (and private? (not permitted?))
+      (response/status (response/response "private bin") 403)
+      (views/inspect-bin-page id (core/get-requests id)))
+    (response/not-found (views/not-found-page)))))
 
 (defn- parse-request-to-bin [request]
-  (let [id (str->uuid (get-in request [:params :id]))
-        body (json/encode (dissoc request :body))
-        requested-bin (core/find-bin-by-id id)]
-    {:requested-bin requested-bin
-     :body body}))
+(let [id (str->uuid (get-in request [:params :id]))
+      body (json/encode (dissoc request :body))
+      requested-bin (core/find-bin-by-id id)]
+  {:requested-bin requested-bin
+   :body body}))
 
 (defn- add-request-to-bin [id request-body]
-  (core/add-request id request-body)
-  (response/response "ok"))
+(core/add-request id request-body)
+(response/response "ok"))
 
 (defn- route-request-to-bin [{:keys [requested-bin body] :as parsed-request}]
-  (if-let [bin-id (:id requested-bin)]
-    (add-request-to-bin bin-id body)
-    (response/not-found (views/not-found-page))))
+(if-let [bin-id (:id requested-bin)]
+  (add-request-to-bin bin-id body)
+  (response/not-found (views/not-found-page))))
 
 (defn handle-creating-bin [form-params]
-  (let [private? (boolean (get form-params "private-bin?"))
-        bin-id (core/create-bin {:private private?})]
-    (if private?
-      (-> (response/redirect (format "/bin/%s/inspect" bin-id))
-        (assoc-in [:session] {:private-bins [bin-id]}))
-      (response/redirect (format "/bin/%s/inspect" bin-id)))))
+(let [private? (boolean (get form-params "private-bin?"))
+      bin-id (core/create-bin {:private private?})]
+  (if private?
+    (-> (response/redirect (format "/bin/%s/inspect" bin-id))
+      (assoc-in [:session] {:private-bins [bin-id]}))
+    (response/redirect (format "/bin/%s/inspect" bin-id)))))
 
 (defn handle-deleting-bin [id]
-  (if (core/find-bin-by-id id)
-    (do (-> id
-          str->uuid
-          (core/delete-bin))
-      (response/redirect "/" 302))
-    (response/not-found (views/not-found-page))))
+(if (core/find-bin-by-id id)
+  (do (-> id
+        str->uuid
+        (core/delete-bin))
+    (response/redirect "/" 302))
+  (response/not-found (views/not-found-page))))
 
 (defn handle-request-to-bin [request]
-  (-> request
-    (parse-request-to-bin)
-    (route-request-to-bin)))
+(-> request
+  (parse-request-to-bin)
+  (route-request-to-bin)))
 
 (defn handle-json-request-to-bin [id]
-  (assoc-in (-> id
-              str->uuid
-              core/find-bin-by-id
-              json/encode
-              response/response) [:headers "Content-Type"] "application/json"))
+  (if-let [bin-id (core/find-bin-by-id (str->uuid id))]
+    (-> (response/response (json/encode {:bin-details bin-id}))
+     (assoc-in [:headers "Content-Type"] "application/json"))
+    (-> (response/not-found (json/encode {:message (str "The bin" id "does not exist")}))
+     (assoc-in [:headers "Content-Type"] "application/json"))))
+
 
 (defn handle-json-create-bin [{:strs [host] :as headers}]
-  (let [bin-id (core/create-bin {:private false})]
-    (assoc-in (response/response (json/encode {:bin-url (format "http://%s/bin/%s" host bin-id)
-                                               :inspect-url (format "http://%s/bin/%s/inspect" host bin-id)
+(let [bin-id (core/create-bin {:private false})]
+  (assoc-in (response/response (json/encode {:bin-url (format "http://%s/bin/%s" host bin-id)
+                                             :inspect-url (format "http://%s/bin/%s/inspect" host bin-id)
                                                :delete-url (format "http://%s/bin/%s/delete" host bin-id)}))
               [:headers "Content-Type"]
               "application/json")))
+
+(defn handle-json-deleting-bin [id]
+  (let [bin-id (str->uuid id)
+        delete-count (core/delete-bin bin-id)]
+    (if (= 1 delete-count)
+      (-> (response/response (json/encode {:message (str "bin" bin-id "has been deleted")}))
+        (assoc-in [:headers "Content-Type"] "application/json"))
+      (-> (response/not-found (json/encode {:message (format "The bin %s could not be deleted because it doesn't exist" id)}))
+        (assoc-in [:headers "Content-Type"] "application/json")))))
+
+(defn handle-json-inspecting-bin [id]
+  (if-let [bin-id (:id (core/find-bin-by-id id))]
+    (-> (response/response (json/encode {:bin-id bin-id
+                                         :requests (core/get-requests bin-id)}))
+      (assoc-in [:headers "Content-Type"] "application/json"))
+    (-> (response/not-found (json/encode {:message (format "The bin %s could not be found" id)}))
+      (assoc-in [:headers "Content-Type"] "application/json"))))
+
+(defn handle-json-bin-index []
+  (-> (response/response (json/encode {:bins (core/all-bins)}))
+    (assoc-in [:headers "Content-Type"] "application/json")))
 
 (defroutes app-routes
   (GET "/" [] (views/index-page))
@@ -83,8 +105,11 @@
   (ANY "/bin/:id" req (handle-request-to-bin req))
   (DELETE "/bin/:id/delete" [id] (handle-deleting-bin id))
   (context "/api" []
+    (GET "/" [] (handle-json-bin-index))
+    (GET "/bin/:id/inspect" [id] (handle-json-inspecting-bin id))
+    (DELETE "/bin/:id/delete" [id] (handle-json-deleting-bin id))
     (POST "/bins" {headers :headers} (handle-json-create-bin headers))
-    (GET "/bins/:id" [id] (handle-json-request-to-bin id)))
+    (GET "/bin/:id" [id] (handle-json-request-to-bin id)))
   (route/resources "/")
   (route/not-found (views/not-found-page)))
 

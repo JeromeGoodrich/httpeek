@@ -10,6 +10,42 @@
   (after (helper/reset-db))
 
   (context "/api"
+    (context "GET /"
+      (it "returns a json response of all existing bins"
+        (let [bin-id (core/create-bin {:private false})
+              response (app* (mock/request :get "/api/"))
+              body (json/decode (:body response))]
+          (should= 200 (:status response))
+          (should= "application/json" (get-in response [:headers "Content-Type"]))
+          (should= (str bin-id) (get (first (get body "bins")) "id")))))
+
+    (context "GET /bin/:id/inspect"
+      (it "returns a json repsonse for inspecting an existing bin"
+        (let [bin-id (core/create-bin {:private false})
+              request (core/add-request bin-id (json/encode (mock/request :get (format "/bin/%s" bin-id))))
+              response (app* (mock/request :get (format "/api/bin/%s/inspect" bin-id)))
+              body (json/decode (:body response))]
+          (should= 200 (:status response))
+          (should= "application/json" (get-in response [:headers "Content-Type"]))
+          (should= (str bin-id) (get (first (get body "requests")) "bin_id"))))
+
+      (it "returns a json response for attempting to inspect a non-existent bin"
+        (let [response (app* (mock/request :get "/api/bin/not-an-id/inspect"))]
+          (should= 404 (:status response))
+          (should= "application/json" (get-in response [:headers "Content-Type"])))))
+
+    (context "DELETE /bin/:id/delete"
+      (it "returns a json response for deleting an existing bin"
+        (let [bin-id (core/create-bin {:private false})
+              response (app* (mock/request :delete (format "/api/bin/%s/delete" bin-id)))]
+          (should= 200 (:status response))
+          (should= "application/json" (get-in response [:headers "Content-Type"]))))
+
+      (it "returns a json response for attempting to delete a non-existent bin"
+        (let [response (app* (mock/request :delete "/api/bin/not-an-id/delete"))]
+          (should= 404 (:status response))
+          (should= "application/json" (get-in response [:headers "Content-Type"])))))
+
     (context "POST /bins"
       (it "returns a json response for creating a bin"
         (let [response (app* (assoc-in (mock/request :post "/api/bins") [:headers "host"] "localhost"))
@@ -19,14 +55,19 @@
           (should= "application/json" (get-in response [:headers "Content-Type"]))
           (should= (format "http://localhost/bin/%s" bin-id) (get body "bin-url")))))
 
-    (context "GET /bins/:id"
-      (it "returns a json response for the bin"
+    (context "GET /bin/:id"
+      (it "returns a json response for an existing bin"
         (let [id (core/create-bin {:private false})
-              response (app* (mock/request :get (format "/api/bins/%s" id)))
+              response (app* (mock/request :get (format "/api/bin/%s" id)))
               body (json/decode (:body response))]
           (should= 200 (:status response))
           (should= "application/json" (get-in response [:headers "Content-Type"]))
-          (should= (str id) (get body "id"))))))
+          (should= (str id) (get (get body "bin-details") "id"))))
+
+      (it "returns a json repsonse for attempting to get a non-existent bin"
+        (let [response (app* (mock/request :get "/api/bin/not-an-id"))]
+          (should= 404 (:status response))
+          (should= "application/json" (get-in response [:headers "Content-Type"]))))))
 
   (context "GET /"
     (it "should return a status of 200"
