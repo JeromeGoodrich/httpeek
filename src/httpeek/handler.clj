@@ -3,6 +3,8 @@
   (:require [ring.util.response :as response]
             [ring.middleware.params :as middleware]
             [ring.middleware.session :as session]
+            [ring.middleware.content-type :as ct]
+            [ring.middleware.json :as ring-json]
             [compojure.route :as route]
             [httpeek.core :as core]
             [cheshire.core :as json]
@@ -66,6 +68,11 @@
     json/encode
     response/response))
 
+(defn handle-json-create-bin [{:strs [host] :as headers}]
+  (let [bin-id (core/create-bin {:private false})]
+    (assoc-in (response/response (json/encode {:bin-url (format "http://%s/bin/%s" host bin-id)
+                        :inspect-url (format "http://%s/bin/%s/inspect" host bin-id)
+                        :delete-url (format "http://%s/bin/%s/delete" host bin-id)})) [:headers "Content-Type"] "application/json")))
 (defroutes app-routes
   (GET "/" [] (views/index-page))
   (POST "/bins" {form-params :form-params} (handle-creating-bin form-params))
@@ -73,6 +80,7 @@
   (ANY "/bin/:id" req (handle-request-to-bin req))
   (DELETE "/bin/:id/delete" [id] (handle-deleting-bin id))
   (context "/api" []
+    (POST "/bins" {headers :headers} (handle-json-create-bin headers))
     (GET "/bins/:id" [id] (handle-json-request-to-bin id)))
   (route/resources "/")
   (route/not-found (views/not-found-page)))
@@ -80,4 +88,5 @@
 (def app*
   (-> app-routes
     (middleware/wrap-params)
+    (ring-json/wrap-json-body)
     (session/wrap-session)))

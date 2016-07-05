@@ -10,6 +10,14 @@
   (after (helper/reset-db))
 
   (context "/api"
+    (context "POST /bins"
+      (it "returns a json response for creating a bin"
+        (let [response (app* (assoc-in (mock/request :post "/api/bins") [:headers "host"] "localhost"))
+              bin-id (->> (core/all-bins) (sort-by :creaed-at) last :id)
+              body  (json/decode (:body response))]
+          (should= 200 (:status response))
+          (should= (format "http://localhost/bin/%s" bin-id) (get body "bin-url")))))
+
     (context "GET /bins/:id"
       (it "returns a json response for the bin"
         (let [id (core/create-bin {:private false})
