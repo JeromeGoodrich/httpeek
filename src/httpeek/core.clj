@@ -27,3 +27,7 @@
 
 (defn all-requests []
   (db/all-requests))
+
+(defn delete-bin [bin-id]
+  (with-error-handling nil
+    (db/delete-bin bin-id)))
