@@ -48,12 +48,21 @@
           (assoc-in [:session] {:private-bins [bin-id]}))
       (response/redirect (format "/bin/%s?inspect" bin-id)))))
 
+(defn handle-deleting-bin [id]
+  (if (core/find-bin-by-id id)
+   (do (-> id
+    str->uuid
+    (core/delete-bin))
+   (response/redirect "/" 302))
+ (response/not-found (views/not-found-page))))
+
 (defroutes app-routes
   (GET "/" [] (views/index-page))
   (POST "/bins" {form-params :form-params} (handle-creating-bin form-params))
   (ANY "/bin/:id" request (-> request
                             (parse-request-to-bin)
                             (handle-requests-to-bin)))
+  (DELETE "/bin/:id/delete" [id] (handle-deleting-bin id))
   (route/resources "/")
   (route/not-found (views/not-found-page)))
 

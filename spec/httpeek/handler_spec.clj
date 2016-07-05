@@ -97,4 +97,16 @@
     (context "Other requests with non-existent bin"
       (it "returns a 404 status"
         (let  [response (app* (mock/request :put (str "/bin/not-an-id")))]
-          (should= 404 (:status response)))))))
+          (should= 404 (:status response))))))
+
+ (context "DELETE /bin/:id/delete"
+   (context "DELETE request to existing bin"
+     (it "redirects to the index page"
+      (let [bin-id (core/create-bin {:private false})
+            response (app* (mock/request :delete (str "/bin/" bin-id "/delete")))]
+        (should= 302 (:status response)))))
+
+   (context "DELETE request to non-existent bin"
+     (it "returns a 404 status"
+      (let [response (app* (mock/request :delete (str "/bin/" -1 "/delete")))]
+        (should= 404 (:status response)))))))

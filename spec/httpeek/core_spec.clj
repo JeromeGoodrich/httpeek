@@ -76,4 +76,16 @@
       (let [bin-id "not a valid id"]
         (add-request bin-id {:foo "bar"})
         (add-request bin-id {:fizz "buzz"})
-        (should= [] (get-requests bin-id))))))
+        (should= [] (get-requests bin-id)))))
+
+  (context "deleting an existing bin"
+    (it "deletes the bin"
+      (let [bin-id (create-bin {:private false})
+            bin-count (count (all-bins))]
+        (delete-bin bin-id)
+        (should= (- bin-count 1) (count (all-bins)))
+        (should-be-nil (find-bin-by-id bin-id)))))
+
+  (context "deleting a non-existent bin"
+    (it "returns nil"
+        (should-be-nil (delete-bin -1)))))

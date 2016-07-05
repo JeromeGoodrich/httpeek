@@ -60,4 +60,13 @@
         (should= {:position "first"} (:full_request (first requests)))
         (should= second-request-id (:id (second requests)))
         (should= {:position "second"} (:full_request (second requests)))
-        ))))
+        )))
+
+  (context "deleting a bin"
+    (it "removes a record from the bin table"
+      (let [bin-id (create-bin false)
+            bin-count (count (all-bins))]
+        (delete-bin bin-id)
+        (should= (- 1 bin-count) (count (all-bins)))
+        (should-be-nil (find-bin-by-id bin-id))))))
+
