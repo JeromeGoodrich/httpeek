@@ -49,10 +49,8 @@
       (response/redirect (format "/bin/%s/inspect" bin-id)))))
 
 (defn handle-deleting-bin [id]
-  (if (core/find-bin-by-id id)
-    (do (-> id
-          str->uuid
-          (core/delete-bin))
+  (if-let [bin-id (core/find-bin-by-id (str->uuid id))]
+    (do (core/delete-bin bin-id)
       (response/redirect "/" 302))
     (response/not-found (views/not-found-page))))
 
@@ -61,10 +59,13 @@
     (parse-request-to-bin)
     (route-request-to-bin)))
 
+(defn json-not-found [message]
+  (response/not-found {:message message}))
+
 (defn handle-json-request-to-bin [id]
   (if-let [bin-id (core/find-bin-by-id (str->uuid id))]
     (response/response {:bin-details bin-id})
-    (response/not-found {:message (str "The bin" id "does not exist")})))
+    (json-not-found (format "The bin %s does not exist" id))))
 
 
 (defn handle-json-create-bin [{:strs [host] :as headers}]
@@ -76,15 +77,15 @@
 (defn handle-json-deleting-bin [id]
   (let [bin-id (str->uuid id)
         delete-count (core/delete-bin bin-id)]
-    (if (= 1 delete-count)
+    (if (< 0 delete-count)
       (response/response {:message (str "bin" bin-id "has been deleted")})
-      (response/not-found {:message (format "The bin %s could not be deleted because it doesn't exist" id)}))))
+      (json-not-found (format "The bin %s could not be deleted because it doesn't exist" id)))))
 
 (defn handle-json-inspecting-bin [id]
   (if-let [bin-id (:id (core/find-bin-by-id id))]
     (response/response {:bin-id bin-id
                         :requests (core/get-requests bin-id)})
-    (response/not-found {:message (format "The bin %s could not be found" id)})))
+    (json-not-found (format "The bin %s could not be found" id))))
 
 (defn handle-json-bin-index []
   (response/response {:bins (core/all-bins)}))
@@ -95,7 +96,8 @@
              (GET "/bin/:id/inspect" [id] (handle-json-inspecting-bin id))
              (DELETE "/bin/:id/delete" [id] (handle-json-deleting-bin id))
              (POST "/bins" {headers :headers} (handle-json-create-bin headers))
-             (GET "/bin/:id" [id] (handle-json-request-to-bin id))))
+             (GET "/bin/:id" [id] (handle-json-request-to-bin id))
+             (route/not-found (json-not-found "This resource could not be found"))))
 
 (defroutes app-routes
            (GET "/" [] (views/index-page))
@@ -113,7 +115,7 @@
 
 (def app*
   (routes (-> api-routes
-            (wrap-routes wrap-set-content-type "application/json")
+            (wrap-routes wrap-set-content-type "application/json; charset=utf-8")
             (ring-json/wrap-json-response))
           (-> app-routes
             (middleware/wrap-params)
