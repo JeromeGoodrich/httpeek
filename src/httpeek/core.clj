@@ -23,7 +23,7 @@
     (db/add-request bin-id full-json-request)))
 
 (defn all-bins []
-  (db/all-bins))
+  (take 50 (db/all-bins)))
 
 (defn all-requests []
   (db/all-requests))
