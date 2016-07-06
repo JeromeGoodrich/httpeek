@@ -100,36 +100,36 @@
     (context "getting an existing private bin with no requests"
       (it "returns a 200 status"
         (let  [bin-id (core/create-bin {:private true})]
-          (let [response (app-routes (assoc (mock/request :get (format "/bin/%s/inspect" bin-id)) :session {:private-bins [bin-id]}))]
+          (let [response (web-routes (assoc (mock/request :get (format "/bin/%s/inspect" bin-id)) :session {:private-bins [bin-id]}))]
             (should= 200 (:status response))
             (should-contain "curl -X" (:body response))))))
 
     (context "getting an existing public bin with no requests"
       (it "returns a 200 status"
         (let  [bin-id (core/create-bin {:private false})]
-          (let [response (app-routes (mock/request :get (format "/bin/%s/inspect" bin-id)))]
+          (let [response (web-routes (mock/request :get (format "/bin/%s/inspect" bin-id)))]
             (should= 200 (:status response))
             (should-contain "curl -X" (:body response))))))
 
     (context "attempting to access private bin from a different session"
       (it "returns a 403 status"
         (let  [bin-id (core/create-bin {:private true})
-               response (app-routes (mock/request :get (format "/bin/%s/inspect" bin-id)))]
+               response (web-routes (mock/request :get (format "/bin/%s/inspect" bin-id)))]
           (should= 403 (:status response)))))
 
     (context "getting an existing private bin with request added"
       (it "returns a 200 status"
         (let  [bin-id (core/create-bin {:private true})
-               valid-request (app-routes (mock/header (mock/request :get (format "/bin/%s" bin-id)) :foo "bar"))
-               response (app-routes (assoc (mock/request :get (format "/bin/%s/inspect" bin-id)) :session {:private-bins [bin-id]}))]
+               valid-request (web-routes (mock/header (mock/request :get (format "/bin/%s" bin-id)) :foo "bar"))
+               response (web-routes (assoc (mock/request :get (format "/bin/%s/inspect" bin-id)) :session {:private-bins [bin-id]}))]
           (should= 200 (:status response))
           (should-contain "foo: bar" (:body response)))))
 
     (context "getting an existing public bin with request added"
       (it "returns a 200 status"
         (let  [bin-id (core/create-bin {:private false})
-               valid-request (app-routes (mock/header (mock/request :get (format "/bin/%s" bin-id)) :foo "bar"))
-               response (app-routes (mock/request :get (format "/bin/%s/inspect" bin-id)))]
+               valid-request (web-routes (mock/header (mock/request :get (format "/bin/%s" bin-id)) :foo "bar"))
+               response (web-routes (mock/request :get (format "/bin/%s/inspect" bin-id)))]
           (should= 200 (:status response))
           (should-contain "foo: bar" (:body response)))))
 
