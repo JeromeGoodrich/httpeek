@@ -63,39 +63,38 @@
 
 (defn handle-json-request-to-bin [id]
   (if-let [bin-id (core/find-bin-by-id (str->uuid id))]
-    (-> (response/response (json/encode {:bin-details bin-id}))
+    (-> (response/response {:bin-details bin-id})
      (assoc-in [:headers "Content-Type"] "application/json"))
-    (-> (response/not-found (json/encode {:message (str "The bin" id "does not exist")}))
+    (-> (response/not-found {:message (str "The bin" id "does not exist")})
      (assoc-in [:headers "Content-Type"] "application/json"))))
 
 
 (defn handle-json-create-bin [{:strs [host] :as headers}]
 (let [bin-id (core/create-bin {:private false})]
-  (assoc-in (response/response (json/encode {:bin-url (format "http://%s/bin/%s" host bin-id)
-                                             :inspect-url (format "http://%s/bin/%s/inspect" host bin-id)
-                                               :delete-url (format "http://%s/bin/%s/delete" host bin-id)}))
-              [:headers "Content-Type"]
-              "application/json")))
+  (assoc-in (response/response {:bin-url (format "http://%s/bin/%s" host bin-id)
+                                :inspect-url (format "http://%s/bin/%s/inspect" host bin-id)
+                                :delete-url (format "http://%s/bin/%s/delete" host bin-id)})
+              [:headers "Content-Type"] "application/json")))
 
 (defn handle-json-deleting-bin [id]
   (let [bin-id (str->uuid id)
         delete-count (core/delete-bin bin-id)]
     (if (= 1 delete-count)
-      (-> (response/response (json/encode {:message (str "bin" bin-id "has been deleted")}))
+      (-> (response/response {:message (str "bin" bin-id "has been deleted")})
         (assoc-in [:headers "Content-Type"] "application/json"))
-      (-> (response/not-found (json/encode {:message (format "The bin %s could not be deleted because it doesn't exist" id)}))
+      (-> (response/not-found {:message (format "The bin %s could not be deleted because it doesn't exist" id)})
         (assoc-in [:headers "Content-Type"] "application/json")))))
 
 (defn handle-json-inspecting-bin [id]
   (if-let [bin-id (:id (core/find-bin-by-id id))]
-    (-> (response/response (json/encode {:bin-id bin-id
-                                         :requests (core/get-requests bin-id)}))
+    (-> (response/response {:bin-id bin-id
+                            :requests (core/get-requests bin-id)})
       (assoc-in [:headers "Content-Type"] "application/json"))
-    (-> (response/not-found (json/encode {:message (format "The bin %s could not be found" id)}))
+    (-> (response/not-found {:message (format "The bin %s could not be found" id)})
       (assoc-in [:headers "Content-Type"] "application/json"))))
 
 (defn handle-json-bin-index []
-  (-> (response/response (json/encode {:bins (core/all-bins)}))
+  (-> (response/response {:bins (core/all-bins)})
     (assoc-in [:headers "Content-Type"] "application/json")))
 
 (defroutes app-routes
@@ -116,4 +115,5 @@
 (def app*
   (-> app-routes
     (middleware/wrap-params)
+    (ring-json/wrap-json-response)
     (session/wrap-session)))
