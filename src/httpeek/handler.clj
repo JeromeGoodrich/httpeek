@@ -59,13 +59,13 @@
     (parse-request-to-bin)
     (route-request-to-bin)))
 
-(defn json-not-found [message]
+(defn handle-not-found-endpoint [message]
   (response/not-found {:message message}))
 
 (defn handle-bin-endpoint [id]
   (if-let [bin-id (core/find-bin-by-id (str->uuid id))]
     (response/response {:bin-details bin-id})
-    (json-not-found (format "The bin %s does not exist" id))))
+    (handle-not-found-endpoint (format "The bin %s does not exist" id))))
 
 
 (defn handle-create-endpoint [{:strs [host] :as headers}]
@@ -79,13 +79,13 @@
         delete-count (core/delete-bin bin-id)]
     (if (< 0 delete-count)
       (response/response {:message (str "bin" bin-id "has been deleted")})
-      (json-not-found (format "The bin %s could not be deleted because it doesn't exist" id)))))
+      (handle-not-found-endpoint (format "The bin %s could not be deleted because it doesn't exist" id)))))
 
 (defn handle-inspect-endpoint [id]
   (if-let [bin-id (:id (core/find-bin-by-id id))]
     (response/response {:bin-id bin-id
                         :requests (core/get-requests bin-id)})
-    (json-not-found (format "The bin %s could not be found" id))))
+    (handle-not-found-endpoint (format "The bin %s could not be found" id))))
 
 (defn handle-bin-index-endpoint []
   (response/response {:bins (core/all-bins)}))
@@ -97,7 +97,7 @@
              (DELETE "/bin/:id/delete" [id] (handle-delete-endpoint id))
              (POST "/bins" {headers :headers} (handle-create-endpoint headers))
              (GET "/bin/:id" [id] (handle-bin-endpoint id))
-             (route/not-found (json-not-found "This resource could not be found"))))
+             (route/not-found (handle-not-found-endpoint "This resource could not be found"))))
 
 (defroutes app-routes
            (GET "/" [] (views/index-page))
