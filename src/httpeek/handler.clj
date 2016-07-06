@@ -62,37 +62,32 @@
     (route-request-to-bin)))
 
 (defn handle-json-request-to-bin [id]
-  (-> (if-let [bin-id (core/find-bin-by-id (str->uuid id))]
-        (response/response {:bin-details bin-id})
-        (response/not-found {:message (str "The bin" id "does not exist")}))
-    (response/content-type "application/json")))
+  (if-let [bin-id (core/find-bin-by-id (str->uuid id))]
+    (response/response {:bin-details bin-id})
+    (response/not-found {:message (str "The bin" id "does not exist")})))
 
 
 (defn handle-json-create-bin [{:strs [host] :as headers}]
   (let [bin-id (core/create-bin {:private false})]
-    (-> (response/response {:bin-url (format "http://%s/bin/%s" host bin-id)
-                            :inspect-url (format "http://%s/bin/%s/inspect" host bin-id)
-                            :delete-url (format "http://%s/bin/%s/delete" host bin-id)})
-      (response/content-type "application/json"))))
+    (response/response {:bin-url (format "http://%s/bin/%s" host bin-id)
+                        :inspect-url (format "http://%s/bin/%s/inspect" host bin-id)
+                        :delete-url (format "http://%s/bin/%s/delete" host bin-id)})))
 
 (defn handle-json-deleting-bin [id]
   (let [bin-id (str->uuid id)
         delete-count (core/delete-bin bin-id)]
-    (-> (if (= 1 delete-count)
-          (response/response {:message (str "bin" bin-id "has been deleted")})
-          (response/not-found {:message (format "The bin %s could not be deleted because it doesn't exist" id)}))
-      (response/content-type "application/json"))))
+    (if (= 1 delete-count)
+      (response/response {:message (str "bin" bin-id "has been deleted")})
+      (response/not-found {:message (format "The bin %s could not be deleted because it doesn't exist" id)}))))
 
 (defn handle-json-inspecting-bin [id]
-  (-> (if-let [bin-id (:id (core/find-bin-by-id id))]
-        (response/response {:bin-id bin-id
-                            :requests (core/get-requests bin-id)})
-        (response/not-found {:message (format "The bin %s could not be found" id)}))
-    (response/content-type "application/json")))
+  (if-let [bin-id (:id (core/find-bin-by-id id))]
+    (response/response {:bin-id bin-id
+                        :requests (core/get-requests bin-id)})
+    (response/not-found {:message (format "The bin %s could not be found" id)})))
 
 (defn handle-json-bin-index []
-  (-> (response/response {:bins (core/all-bins)})
-    (response/content-type "application/json")))
+  (response/response {:bins (core/all-bins)}))
 
 (defroutes api-routes
            (context "/api" []
@@ -111,8 +106,14 @@
            (route/resources "/")
            (route/not-found (views/not-found-page)))
 
+(defn wrap-set-content-type [handler content-type]
+  (fn [request]
+    (let [response (handler request)]
+      (response/content-type response content-type))))
+
 (def app*
   (routes (-> api-routes
+            (wrap-routes wrap-set-content-type "application/json")
             (ring-json/wrap-json-response))
           (-> app-routes
             (middleware/wrap-params)
