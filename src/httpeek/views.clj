@@ -36,11 +36,11 @@
     [:form {:action "/bins" :method "post"}
      [:button.mdl-button.mdl.button--fab.mdl-button--colored {:type "submit"} (h/h "Create Bin")
       [:i.material-icons (h/h "add")]]
-     [:input {:type "checkbox" :value "true" :name "private-bin-checkbox"}]]]])
+     [:input {:type "checkbox" :value "true" :name "private-bin?"}]]]])
 
 (defn list-bin-history []
   [:ul
-   (let [list-of-ids (map :id (core/all-bins))]
+   (let [list-of-ids (map :id (core/get-bins {:limit 50}))]
      (for [id list-of-ids]
        [:li
         [:a.mdl-button.mdl-button--colored  {:href (h/h (str "/bin/" id "?inspect"))} (h/h (str "Bin: " id))]]))])

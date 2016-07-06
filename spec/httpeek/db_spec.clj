@@ -7,18 +7,23 @@
 (describe "httpeek.db"
   (after (helper/reset-db))
 
+  (context "retrieving bins"
+    (it "gets a specified number of bins"
+      (let [bins (repeatedly 50 #(create-bin false))]
+      (should= (count bins) (count (get-bins 50))))))
+
   (context "creating a bin"
     (it "adds a new public bin record to the bin table"
-      (let [bin-count (count (all-bins))
+      (let [bin-count (count (get-bins 50))
             bin-id(create-bin false)]
         (should= (+ 1 bin-count)
-                 (count (all-bins)))))
+                 (count (get-bins 50)))))
 
     (it "adds a new private bin record to the bin table"
-      (let [bin-count (count (all-bins))
+      (let [bin-count (count (get-bins 50))
             bin-id(create-bin false)]
         (should= (+ 1 bin-count)
-                 (count (all-bins))))))
+                 (count (get-bins 50))))))
 
   (context "finding a bin"
     (it "finds a public bin"
@@ -65,8 +70,13 @@
   (context "deleting a bin"
     (it "removes a record from the bin table"
       (let [bin-id (create-bin false)
-            bin-count (count (all-bins))]
+            bin-count (count (get-bins 50))]
         (delete-bin bin-id)
-        (should= (- 1 bin-count) (count (all-bins)))
-        (should-be-nil (find-bin-by-id bin-id))))))
+        (should= (- 1 bin-count) (count (get-bins 50)))
+        (should-be-nil (find-bin-by-id bin-id))))
 
+    (it "returns the count of bins deleted"
+      (let [bin-id (create-bin false)
+            fake-bin-id nil]
+        (should= 1 (delete-bin bin-id))
+        (should= 0 (delete-bin fake-bin-id))))))

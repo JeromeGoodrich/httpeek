@@ -12,7 +12,8 @@
                            [migratus "0.8.25"]
                            [environ "1.0.3"]
                            [speclj "3.3.1"]
-                           [cheshire "5.6.2"]]
+                           [cheshire "5.6.2"]
+                           [ring/ring-json "0.4.0"]]
             :profiles {:test {:dependencies [[speclj "3.3.1"]]}}
             :plugins [[speclj "3.3.1"]
                       [lein-environ "1.0.3"]
