@@ -24,9 +24,8 @@
     first
     :id))
 
-(defn all-bins []
-  (j/query db
-    ["SELECT * FROM bins;"]))
+(defn get-bins [limit]
+  (j/query db (str "SELECT * FROM bins LIMIT " limit ";")))
 
 (defn all-requests []
   (j/query db

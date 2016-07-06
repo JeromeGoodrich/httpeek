@@ -7,12 +7,20 @@
 (describe "httpeek.core"
   (after (helper/reset-db))
 
+  (context "retrieving bins"
+    (it "returns a set amount of bins"
+      (let [bins (repeatedly 50 #(create-bin {:private false}))]
+        (should= (count bins) (count (get-bins {:limit 50})))))
+
+    (it "returns 0 for an invalid limit"
+      (should= 0 (get-bins {:limit "not-a-limit"}))))
+
   (context "creating a bin"
     (it "increases the bin count by 1"
-      (let [bin-count (count (all-bins))]
+      (let [bin-count (count (get-bins {:limit 50}))]
       (create-bin {:private false})
       (should= (+ 1 bin-count)
-               (count (all-bins))))))
+               (count (get-bins {:limit 50}))))))
 
   (context "finding a bin"
     (it "finds an existing bin"
@@ -81,9 +89,9 @@
   (context "deleting an existing bin"
     (it "deletes the bin"
       (let [bin-id (create-bin {:private false})
-            bin-count (count (all-bins))]
+            bin-count (count (get-bins {:limit 50}))]
         (delete-bin bin-id)
-        (should= (- bin-count 1) (count (all-bins)))
+        (should= (- bin-count 1) (count (get-bins {:limit 50})))
         (should-be-nil (find-bin-by-id bin-id)))))
 
   (context "deleting a non-existent bin"

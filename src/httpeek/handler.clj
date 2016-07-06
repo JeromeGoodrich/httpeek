@@ -86,7 +86,7 @@
     (handle-api-not-found (format "The bin %s could not be found" id))))
 
 (defn- handle-api-bin-index []
-  (response/response {:bins (core/all-bins)}))
+  (response/response {:bins (core/get-bins {:limit 50})}))
 
 (defroutes api-routes
   (context "/api" []

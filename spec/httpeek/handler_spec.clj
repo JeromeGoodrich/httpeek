@@ -49,7 +49,7 @@
     (context "POST /bins"
       (it "returns a json response for creating a bin"
         (let [response (app* (assoc-in (mock/request :post "/api/bins") [:headers "host"] "localhost"))
-              bin-id (->> (core/all-bins) (sort-by :creaed-at) last :id)
+              bin-id (->> (core/get-bins {:limit 50}) (sort-by :creaed-at) last :id)
               body  (json/decode (:body response))]
           (should= 200 (:status response))
           (should= "application/json; charset=utf-8" (get-in response [:headers "Content-Type"]))
@@ -66,7 +66,6 @@
 
       (it "returns a json repsonse for attempting to get a non-existent bin"
         (let [response (app* (mock/request :get "/api/bin/not-an-id"))]
-          (prn response)
           (should= 404 (:status response))
           (should= "application/json; charset=utf-8" (get-in response [:headers "Content-Type"])))))
 
@@ -92,7 +91,7 @@
     (context "a bin is created successfully"
       (it "redirects to the bin's inspect page"
         (let [response (app* (mock/request :post "/bins"))
-              bin (->> (core/all-bins) (sort-by :created-at) last)]
+              bin (->> (core/get-bins {:limit 50}) (sort-by :created-at) last)]
           (should= 302 (:status response))
           (should= (format "/bin/%s/inspect" (:id bin)) (get-in response [:headers "Location"]))))))
 
