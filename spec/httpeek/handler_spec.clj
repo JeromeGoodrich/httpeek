@@ -141,16 +141,14 @@
         (let  [bin-id (core/create-bin {:private true})
                valid-request (web-routes (mock/header (mock/request :get (format "/bin/%s" bin-id)) :foo "bar"))
                response (web-routes (assoc (mock/request :get (format "/bin/%s/inspect" bin-id)) :session {:private-bins [bin-id]}))]
-          (should= 200 (:status response))
-          (should-contain "foo: bar" (:body response)))))
+          (should= 200 (:status response)))))
 
     (context "getting an existing public bin with request added"
       (it "returns a 200 status"
         (let  [bin-id (core/create-bin {:private false})
                valid-request (web-routes (mock/header (mock/request :get (format "/bin/%s" bin-id)) :foo "bar"))
                response (web-routes (mock/request :get (format "/bin/%s/inspect" bin-id)))]
-          (should= 200 (:status response))
-          (should-contain "foo: bar" (:body response)))))
+          (should= 200 (:status response)))))
 
     (context "getting a non-existent bin"
       (it "returns a 404 status"
