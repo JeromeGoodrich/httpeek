@@ -36,14 +36,14 @@
     [:form {:action "/bins" :method "post"}
      [:button.mdl-button.mdl.button--fab.mdl-button--colored {:type "submit"} (h/h "Create Bin")
       [:i.material-icons (h/h "add")]]
-     [:input {:type "checkbox" :value "true" :name "private-bin?"}]]]])
+     [:input {:type "checkbox" :value "true" :name "private-bin?"} (h/h "make this bin private")]]]])
 
 (defn list-bin-history []
   [:ul
    (let [list-of-ids (map :id (core/get-bins {:limit 50}))]
      (for [id list-of-ids]
        [:li
-        [:a.mdl-button.mdl-button--colored  {:href (h/h (str "/bin/" id "?inspect"))} (h/h (str "Bin: " id))]]))])
+        [:a.mdl-button.mdl-button--colored  {:href (h/h (format "/bin/%s/inspect" id))} (h/h (str "Bin: " id))]]))])
 
 (defn history-card []
   [:div.index-card.mdl-card.mdl-shadow--2dp
@@ -60,19 +60,27 @@
 (defn request-card [request]
   (let [{:keys [created_at]} request
         {{:keys [headers content-length form-params
-                 query-params uri request-method]} :full_request} request]
+                 query-params uri request-method
+                 json-params xml-params]} :full_request} request
+        display-content {"application/json" (cheshire.core/encode json-params {:pretty true})
+                         "text/xml" xml-params
+                         "application/xml" xml-params
+                         "application/x-www-form-urlencoded" form-params}]
     [:div.request-card.mdl-card.mdl-shadow--2dp
      [:div.mdl-card__title
-      [:h2.mdl-card__title-text (h/h (str request-method))]
-      [:h3.mdl-card__subtitle-text (h/h (str uri query-params))]]
+      [:h2.mdl-card__title-text (h/h (clojure.string/upper-case request-method))]]
      [:div.mdl-card__supporting-text (h/h (str created_at))]
      [:div.mdl-card__actions.mdl-card--border
       [:div.mdl-grid
-       [:div.mdl-cell.mdl-cell--4-col (h/h (str "Form/Post Params"))]
-       [:div.mdl-cell.mdl-cell--6-col (h/h (str "Headers"))]]
+       [:div.mdl-cell.mdl-cell--6-col
+        [:h4 (h/h (str "Headers"))]]
+       [:div.mdl-cell.mdl-cell--6-col
+        [:h4 (h/h (str "Request Body"))]]]
       [:div.mdl-grid
-       [:div.mdl-cell.mdl-cell--4-col (h/h (str form-params))]
-       [:div.mdl-cell.mdl-cell--6-col (list-headers headers)]]]]))
+       [:div.mdl-cell.mdl-cell--6-col (list-headers headers)]
+       (if-let [content-type (:content-type headers)]
+         [:div.mdl-cell.mdl-cell--6-col
+          [:pre (h/h (get display-content content-type))]])]]]))
 
 (defn index-html []
   [:body

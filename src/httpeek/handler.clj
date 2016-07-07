@@ -30,7 +30,7 @@
 
 (defn- parse-request-to-bin [request]
   (let [id (str->uuid (get-in request [:params :id]))
-        body (json/encode request {:pretty true})
+        body (json/encode (dissoc request :body) {:pretty true})
         requested-bin (core/find-bin-by-id id)]
     {:requested-bin requested-bin
      :body body}))
