@@ -54,7 +54,8 @@
 
 (defn list-headers [headers]
   [:ul.mdl-list
-   (map (fn [[k v]] [:li.mdl-list__item (str (name k) ": " v)]) headers)])
+   (map (fn [[k v]] [:li.mdl-list__item
+                     [:b (name k) ] (str ": " v)]) headers)])
 
 (defn request-card [request]
   (let [{:keys [created_at]} request
