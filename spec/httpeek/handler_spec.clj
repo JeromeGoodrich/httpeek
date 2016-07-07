@@ -3,11 +3,31 @@
             [httpeek.handler :refer :all]
             [ring.mock.request :as mock]
             [httpeek.spec-helper :as helper]
+            [ring.util.io :as r-io]
             [cheshire.core :as json]
             [httpeek.core :as core]))
 
 (describe "httpeek.handler"
   (after (helper/reset-db))
+
+  (context "malformed XML request"
+    (it "responds with the a default malformed xml response"
+      (let [handler (wrap-xml-params identity)
+            request {:headers {"content-type" "application/xml"}
+                     :body (r-io/string-input-stream "not-xml")}
+            response (handler request)]
+        (should= 400 (:status response))
+        (should= "Malformed XML in request body." (:body response)))))
+
+  (context "proper XML request"
+    (it "appends an xml-params key and value to the response map"
+      (let [handler (wrap-xml-params identity)
+            request (-> (mock/request :get "/bin/some-bin")
+                      (assoc :body (r-io/string-input-stream "<root><child>aaa</child><child/></root>"))
+                      (assoc-in [:headers "content-type"] "text/xml"))
+            response (handler request)]
+        (should= "<?xml version=\"1.0\" encoding=\"UTF-8\"?><root>\n  <child>aaa</child>\n  <child/>\n</root>\n"
+                 (:xml-params response)))))
 
   (context "/api"
     (context "GET /"

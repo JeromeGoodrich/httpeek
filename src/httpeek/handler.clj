@@ -4,10 +4,15 @@
             [ring.middleware.params :as middleware]
             [ring.middleware.session :as session]
             [ring.middleware.json :as ring-json]
+            [clojure.data.xml :as xml]
             [compojure.route :as route]
             [httpeek.core :as core]
             [cheshire.core :as json]
-            [httpeek.views :as views]))
+            [httpeek.views :as views])
+  (:import [java.io StringReader StringWriter]
+           [javax.xml.transform TransformerFactory OutputKeys]
+           [org.xml.sax SAXParseException]
+           [javax.xml.transform.stream StreamSource StreamResult]))
 
 (defn- str->uuid [uuid-string]
   (core/with-error-handling nil
@@ -25,7 +30,7 @@
 
 (defn- parse-request-to-bin [request]
   (let [id (str->uuid (get-in request [:params :id]))
-        body (json/encode (dissoc request :body))
+        body (json/encode request {:pretty true})
         requested-bin (core/find-bin-by-id id)]
     {:requested-bin requested-bin
      :body body}))
@@ -106,10 +111,52 @@
   (route/resources "/")
   (route/not-found (views/not-found-page)))
 
+(defn ppxml [xml-str]
+  (let [in  (StreamSource. (StringReader. xml-str))
+        out (StreamResult. (StringWriter.))
+        transformer (.newTransformer
+                     (TransformerFactory/newInstance))]
+    (doseq [[prop val] {OutputKeys/INDENT "yes"
+                        OutputKeys/METHOD "xml"
+                        "{http://xml.apache.org/xslt}indent-amount" "2"}]
+      (.setOutputProperty transformer prop val))
+    (.transform transformer in out)
+    (str (.getWriter out))))
+
+(defn- xml-request? [request]
+  (if-let [content-type (get-in request [:headers "content-type"])]
+    (not (empty? (re-find #"(application/xml)|(text/xml)" content-type)))))
+
+(def default-malformed-xml-response
+  {:status 400
+   :headers {"Content-Type" "text/plain"}
+   :body "Malformed XML in request body."})
+
+(defn- read-xml [request]
+  (if (xml-request? request)
+    (if-let [body (slurp (:body request))]
+      [true (core/with-error-handling nil
+                                (ppxml body))]
+      [false nil])))
+
+(defn- assoc-xml-params [request formatted-xml]
+  (-> request
+    (assoc :xml-params formatted-xml)))
+
+(defn wrap-xml-params [handler]
+  (fn [request]
+    (if-let [[valid? formatted-xml] (read-xml request)]
+      (if (and valid? (not (nil? formatted-xml)))
+        (handler (assoc-xml-params request formatted-xml))
+        default-malformed-xml-response)
+      (handler request))))
+
 (def app*
   (routes (-> api-routes
             (wrap-routes ring-json/wrap-json-response)
             (ring-json/wrap-json-response))
           (-> web-routes
             (middleware/wrap-params)
-            (session/wrap-session))))
+            (ring-json/wrap-json-params)
+            (session/wrap-session)
+            (wrap-xml-params))))
