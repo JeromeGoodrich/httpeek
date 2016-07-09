@@ -120,14 +120,14 @@
     (context "getting an existing private bin with request added"
       (it "returns a 200 status"
         (let  [bin-id (core/create-bin {:private true})
-               valid-request (web-routes (mock/header (mock/request :get (format "/bin/%s" bin-id)) :foo "bar"))
+               valid-request (web-routes (assoc (mock/request :get (format "/bin/%s" bin-id)) :protocol "HTTP/1.1"))
                response (web-routes (assoc (mock/request :get (format "/bin/%s/inspect" bin-id)) :session {:private-bins [bin-id]}))]
           (should= 200 (:status response)))))
 
     (context "getting an existing public bin with request added"
       (it "returns a 200 status"
         (let  [bin-id (core/create-bin {:private false})
-               valid-request (web-routes (mock/header (mock/request :get (format "/bin/%s" bin-id)) :foo "bar"))
+               valid-request (web-routes (assoc (mock/request :get (format "/bin/%s" bin-id)) :protocol "HTTP/1.1"))
                response (web-routes (mock/request :get (format "/bin/%s/inspect" bin-id)))]
           (should= 200 (:status response)))))
 

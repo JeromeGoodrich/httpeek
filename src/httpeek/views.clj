@@ -60,7 +60,7 @@
 (defn list-headers [headers]
   [:ul.mdl-list
    (map (fn [[k v]] [:li.mdl-list__item
-                     [:b (name k) ] (str ": " v)]) headers)])
+                     [:p [:b (name k) ] (str ": " v)]]) headers)])
 
 (defn ppxml [xml-str]
   (let [in  (StreamSource. (StringReader. xml-str))
@@ -92,6 +92,19 @@
 (defn- display-content [content-type body]
   ((get display-content-map content-type) body))
 
+(defn raw-headers [headers]
+   (map (fn [[k v]] [:li
+                     (str (name k) ": " v)]) headers))
+
+(defn display-raw-request [{:keys [request-method protocol uri headers body] :as full-request}]
+  [:ul
+   [:li (str (clojure.string/upper-case request-method) " "
+             (clojure.string/upper-case uri) " "
+             (clojure.string/upper-case protocol) "\r\n")]
+   (raw-headers headers)
+   (if (not (empty? body))
+   [:li body])])
+
 (defn request-card [request]
   (let [{:keys [created_at full_request]} request
         {{:keys [headers body
@@ -122,7 +135,7 @@
          [:div.mdl-cell.mdl-cell--8-col
           [:h4 (h/h (str "Raw Request"))]]]
         [:div.mdl-grid
-         [:div.mdl-cell.mdl-cell--8-col (str full_request)]]]]]]))
+         [:div.mdl-cell.mdl-cell--8-col (display-raw-request full_request)]]]]]]))
 
 (defn index-html []
   [:body
