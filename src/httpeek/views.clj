@@ -149,22 +149,23 @@
     [:div
      [:h1 (h/h "Sorry! The Page You were looking for cannot be found")]]))
 
-(defn code-example-card []
+(defn code-example-card [host id]
   [:div.index-card.mdl-card.mdl-shadow--2dp
    [:div.mdl-card__title
     [:h2.mdl-card__title-text (h/h "make a request to get started")]]
    [:div.mdl-card__actions.mdl-card--border
-    [:code (h/h "curl -X POST -d foo=bar 'this bin url'")]]])
+    [:code (h/h (format "curl -X POST -d foo=bar %s/bin/%s" host id))]]])
 
-(defn inspect-html [id requests]
+(defn inspect-html [id host requests]
   [:body
    (navbar)
    [:main.mdl-layout__content
-    [:h3.bin-title (h/h (str "Bin-Url: /bin/" id))]]
+    [:h4.bin-title (h/h "Bin-URL")]
+    [:h4.bin-title (h/h (str host "/bin/" id))]
    (if (= (count requests) 0)
-     (code-example-card)
+     (code-example-card host id)
      (for [request requests]
-       (request-card request)))])
+       (request-card request)))]])
 
 (defn wrap-layout [component]
   (page/html5
@@ -175,8 +176,8 @@
 (defn index-page []
   (wrap-layout (index-html )))
 
-(defn inspect-bin-page [bin-id requests]
-  (wrap-layout (inspect-html bin-id requests)))
+(defn inspect-bin-page [bin-id host requests]
+  (wrap-layout (inspect-html bin-id host requests)))
 
 (defn not-found-page []
   (wrap-layout (not-found-html)))

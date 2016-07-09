@@ -13,14 +13,14 @@
   (core/with-error-handling nil
                             (java.util.UUID/fromString uuid-string)))
 
-(defn- handle-web-inspect-bin [id session]
+(defn- handle-web-inspect-bin [id session {:strs [host] :as headers}]
   (let [requested-bin (core/find-bin-by-id id)
         private? (:private requested-bin)
         permitted? (some #{id} (:private-bins session))]
     (if requested-bin
       (if (and private? (not permitted?))
         (response/status (response/response "private bin") 403)
-        (views/inspect-bin-page id (core/get-requests id)))
+        (views/inspect-bin-page id host (core/get-requests id)))
       (response/not-found (views/not-found-page)))))
 
 (defn- slurp-body [request]
@@ -106,7 +106,7 @@
 (defroutes web-routes
   (GET "/" [] (views/index-page))
   (POST "/bins" {form-params :form-params} (handle-web-create-bin form-params))
-  (GET "/bin/:id/inspect" [id :as {session :session}] (handle-web-inspect-bin (str->uuid id) session))
+  (GET "/bin/:id/inspect" [id :as {session :session headers :headers}] (handle-web-inspect-bin (str->uuid id) session headers))
   (ANY "/bin/:id" req (handle-web-request-to-bin req))
   (DELETE "/bin/:id/delete" [id] (handle-web-delete-bin id))
   (route/resources "/")
