@@ -48,5 +48,6 @@
   (j/query db (str "SELECT * FROM requests WHERE bin_id='"bin-id "';")))
 
 (defn delete-bin [bin-id]
+  (j/delete! db :requests ["bin_id = ?" bin-id])
   (-> (j/delete! db :bins ["id = ?" bin-id])
     first))
