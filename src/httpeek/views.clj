@@ -97,9 +97,9 @@
                      (str (name k) ": " v)]) headers))
 
 (defn display-raw-request [{:keys [request-method protocol uri headers body] :as full-request}]
-  [:ul
+  [:ul.raw-request
    [:li (str (clojure.string/upper-case request-method) " "
-             (clojure.string/upper-case uri) " "
+             uri " "
              (clojure.string/upper-case protocol) "\r\n")]
    (raw-headers headers)
    (if (not (empty? body))
@@ -160,8 +160,10 @@
   [:body
    (navbar)
    [:main.mdl-layout__content
-    [:h4.bin-title (h/h "Bin-URL")]
-    [:h4.bin-title (h/h (str host "/bin/" id))]
+    [:h4.bin-title (h/h (format "URL: %s/bin/%s" host id))]
+    [:form.bin-title {:action (h/h (format "/bin/%s/delete" id)) :method "get"}
+     [:button.mdl-button.mdl-js-button.mdl.button--fab.mdl-button--colored {:type "submit"} (h/h "Delete Bin")
+      [:i.material-icons (h/h "delete")]]]
    (if (= (count requests) 0)
      (code-example-card host id)
      (for [request requests]

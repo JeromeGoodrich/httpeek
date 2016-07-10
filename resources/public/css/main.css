@@ -20,3 +20,7 @@
   margin: 2rem auto 2rem auto;
   width: 80%;
 }
+
+ul.raw-request {
+ list-style-type: none;
+}

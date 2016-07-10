@@ -17,6 +17,7 @@
   (let [requested-bin (core/find-bin-by-id id)
         private? (:private requested-bin)
         permitted? (some #{id} (:private-bins session))]
+
     (if requested-bin
       (if (and private? (not permitted?))
         (response/status (response/response "private bin") 403)
@@ -54,10 +55,11 @@
       (response/redirect (format "/bin/%s/inspect" bin-id)))))
 
 (defn- handle-web-delete-bin [id]
-  (if-let [bin-id (core/find-bin-by-id (str->uuid id))]
-    (do (core/delete-bin bin-id)
-      (response/redirect "/" 302))
-    (response/not-found (views/not-found-page))))
+  (let [bin-id (str->uuid id)
+        delete-count (core/delete-bin bin-id)]
+    (if (< 0 delete-count)
+      (response/redirect "/" 302)
+      (response/not-found (views/not-found-page)))))
 
 (defn- handle-web-request-to-bin [request]
   (-> request
@@ -108,7 +110,7 @@
   (POST "/bins" {form-params :form-params} (handle-web-create-bin form-params))
   (GET "/bin/:id/inspect" [id :as {session :session headers :headers}] (handle-web-inspect-bin (str->uuid id) session headers))
   (ANY "/bin/:id" req (handle-web-request-to-bin req))
-  (DELETE "/bin/:id/delete" [id] (handle-web-delete-bin id))
+  (GET "/bin/:id/delete" [id] (handle-web-delete-bin id))
   (route/resources "/")
   (route/not-found (views/not-found-page)))
 
