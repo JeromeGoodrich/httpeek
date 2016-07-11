@@ -168,10 +168,10 @@
    (context "DELETE request to existing bin"
      (it "redirects to the index page"
       (let [bin-id (core/create-bin {:private false})
-            response (app* (mock/request :get (str "/bin/" bin-id "/delete")))]
+            response (app* (mock/request :post (str "/bin/" bin-id "/delete")))]
         (should= 302 (:status response)))))
 
    (context "DELETE request to non-existent bin"
      (it "returns a 404 status"
-      (let [response (app* (mock/request :delete (str "/bin/" -1 "/delete")))]
+      (let [response (app* (mock/request :post (str "/bin/" -1 "/delete")))]
         (should= 404 (:status response)))))))

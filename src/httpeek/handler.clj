@@ -110,7 +110,7 @@
   (POST "/bins" {form-params :form-params} (handle-web-create-bin form-params))
   (GET "/bin/:id/inspect" [id :as {session :session headers :headers}] (handle-web-inspect-bin (str->uuid id) session headers))
   (ANY "/bin/:id" req (handle-web-request-to-bin req))
-  (GET "/bin/:id/delete" [id] (handle-web-delete-bin id))
+  (POST "/bin/:id/delete" [id] (handle-web-delete-bin id))
   (route/resources "/")
   (route/not-found (views/not-found-page)))
 
