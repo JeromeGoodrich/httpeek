@@ -7,8 +7,11 @@
     (catch Exception e#
       ~default)))
 
-(defn create-bin [private-bin?]
-  (db/create-bin (:private private-bin?)))
+(defn create-bin
+  ([private-bin?] (with-error-handling nil
+                                       (db/create-bin (:private private-bin?))))
+  ([private-bin? custom-response] (with-error-handling nil
+                                                       (db/create-bin (:private private-bin?) custom-response))))
 
 (defn find-bin-by-id [id]
   (with-error-handling nil

@@ -18,9 +18,17 @@
   (context "creating a bin"
     (it "increases the bin count by 1"
       (let [bin-count (count (get-bins {:limit 50}))]
-      (create-bin {:private false})
+      (create-bin {:private false} (json/encode {:status 200 :headers {:foo "bar"}}))
       (should= (+ 1 bin-count)
-               (count (get-bins {:limit 50}))))))
+               (count (get-bins {:limit 50})))))
+
+    (it "it does not create the bin if the arguments are wrong"
+      (let [bin-count (count (get-bins {:limit 50}))
+            malformed-bin (create-bin {:private nil})
+            another-malformed-bin (create-bin {:private false} "not a json string")]
+        (should= bin-count (count (get-bins {:limit 50})))
+        (should-be-nil malformed-bin)
+        (should-be-nil another-malformed-bin))))
 
   (context "finding a bin"
     (it "finds an existing bin"
