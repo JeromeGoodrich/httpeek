@@ -1,13 +1,8 @@
 (ns httpeek.views
   (require [hiccup.page :as page]
            [httpeek.core :as core]
-           [hiccup.core :as h]
-           [httpeek.xml-formatter :as xml]
-           [httpeek.json-formatter :as json])
-  (:import [java.io StringReader StringWriter]
-           [javax.xml.transform TransformerFactory OutputKeys]
-           [org.xml.sax SAXParseException]
-           [javax.xml.transform.stream StreamSource StreamResult]))
+           [httpeek.content-type-presenter :as presenter]
+           [hiccup.core :as h]))
 
 (defn navbar []
   [:div.mdl-layout.mdl-layout--fixed-header
@@ -64,15 +59,6 @@
    (map (fn [[k v]] [:li.mdl-list__item
                      [:p [:b (name k) ] (str ": " v)]]) headers)])
 
-(def display-content-map
-  {"application/json" json/format-json
-   "text/xml" xml/format-xml
-   "application/xml" xml/format-xml
-   "application/x-www-form-urlencoded" identity})
-
-(defn- display-content [content-type body]
-  ((get display-content-map content-type) body))
-
 (defn raw-headers [headers]
    (map (fn [[k v]] [:li
                      (str (name k) ": " v)]) headers))
@@ -109,7 +95,7 @@
          [:div.mdl-cell.mdl-cell--6-col (list-headers headers)]
          (if-let [content-type (:content-type headers)]
            [:div.mdl-cell.mdl-cell--6-col
-            [:pre (h/h (display-content content-type body))]])]]]
+            [:pre (h/h (presenter/present-content-type content-type body))]])]]]
       [:div#raw-request.mdl-tabs__panel
         [:div.mdl-card__actions.mdl-card--border
         [:div.mdl-grid
