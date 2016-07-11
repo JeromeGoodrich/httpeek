@@ -92,8 +92,16 @@
             bin-count (count (get-bins {:limit 50}))]
         (delete-bin bin-id)
         (should= (- bin-count 1) (count (get-bins {:limit 50})))
-        (should-be-nil (find-bin-by-id bin-id)))))
+        (should-be-nil (find-bin-by-id bin-id))))
+
+    (it "only deletes requests associated with the deleted bin"
+      (let [bin-id (create-bin {:private false})
+            first-request-id (add-request bin-id (json/encode {:position "first"}))
+            second-request-id (add-request bin-id (json/encode {:position "second"}))
+            requests (get-requests bin-id)]
+        (delete-bin "some-other-bin-id")
+        (should-not (empty? requests))))
 
   (context "deleting a non-existent bin"
     (it "returns nil"
-        (should-be-nil (delete-bin -1)))))
+        (should-be-nil (delete-bin -1))))))
