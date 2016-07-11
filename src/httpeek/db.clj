@@ -19,10 +19,15 @@
         "jsonb" (json/decode value true)
         :else value))))
 
-(defn create-bin [private-bin?]
-  (-> (j/query db (str "INSERT INTO bins VALUES(DEFAULT, '" private-bin? "', DEFAULT) returning id;"))
+(defn create-bin
+  ([private-bin?]
+  (-> (j/query db (str "INSERT INTO bins VALUES(DEFAULT, '" private-bin? "', DEFAULT, DEFAULT) returning id;"))
     first
     :id))
+  ([private-bin? custom-response]
+  (-> (j/query db (str "INSERT INTO bins VALUES(DEFAULT, '" private-bin? "', '" custom-response "', DEFAULT) returning id;"))
+    first
+    :id)))
 
 (defn get-bins [limit]
   (j/query db (str "SELECT * FROM bins LIMIT " limit ";")))

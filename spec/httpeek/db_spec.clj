@@ -21,15 +21,22 @@
 
     (it "adds a new private bin record to the bin table"
       (let [bin-count (count (get-bins 50))
-            bin-id(create-bin false)]
+            bin-id(create-bin true)]
         (should= (+ 1 bin-count)
                  (count (get-bins 50))))))
 
   (context "finding a bin"
-    (it "finds a public bin"
+    (it "finds a public bin with no custom response"
       (let [bin-id (create-bin false)]
         (should= bin-id (:id (find-bin-by-id bin-id)))
         (should= false (:private (find-bin-by-id bin-id)))))
+
+    (it "finds a public bin with a custom response"
+      (let [bin-id (create-bin false (json/encode {:status 200 :headers {"foo" "bar"} :body "hello"}))]
+        (should= bin-id (:id (find-bin-by-id bin-id)))
+        (should= 200 (:status (:custom_response (find-bin-by-id bin-id))))
+        (should= {:foo "bar"} (:headers (:custom_response (find-bin-by-id bin-id))))
+        (should= "hello" (:body (:custom_response (find-bin-by-id bin-id))))))
 
     (it "finds a private bin"
       (let [bin-id (create-bin true)]
