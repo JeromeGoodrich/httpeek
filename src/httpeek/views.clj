@@ -1,7 +1,8 @@
 (ns httpeek.views
   (require [hiccup.page :as page]
            [httpeek.core :as core]
-           [hiccup.core :as h])
+           [hiccup.core :as h]
+           [httpeek.xml-formatter :as xml])
   (:import [java.io StringReader StringWriter]
            [javax.xml.transform TransformerFactory OutputKeys]
            [org.xml.sax SAXParseException]
@@ -62,22 +63,6 @@
    (map (fn [[k v]] [:li.mdl-list__item
                      [:p [:b (name k) ] (str ": " v)]]) headers)])
 
-(defn ppxml [xml-str]
-  (let [in  (StreamSource. (StringReader. xml-str))
-        out (StreamResult. (StringWriter.))
-        transformer (.newTransformer
-                     (TransformerFactory/newInstance))]
-    (doseq [[prop val] {OutputKeys/INDENT "yes"
-                        OutputKeys/METHOD "xml"
-                        "{http://xml.apache.org/xslt}indent-amount" "2"}]
-      (.setOutputProperty transformer prop val))
-    (.transform transformer in out)
-    (str (.getWriter out))))
-
-(defn- format-xml [xml-string]
-  (core/with-error-handling "Malformed XML in the request body"
-                            (ppxml xml-string)))
-
 (defn- format-json [body]
   (-> body
     cheshire.core/decode
@@ -85,8 +70,8 @@
 
 (def display-content-map
   {"application/json" format-json
-   "text/xml" format-xml
-   "application/xml" format-xml
+   "text/xml" xml/format-xml
+   "application/xml" xml/format-xml
    "application/x-www-form-urlencoded" identity})
 
 (defn- display-content [content-type body]
