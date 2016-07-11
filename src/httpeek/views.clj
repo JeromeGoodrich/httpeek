@@ -2,7 +2,8 @@
   (require [hiccup.page :as page]
            [httpeek.core :as core]
            [hiccup.core :as h]
-           [httpeek.xml-formatter :as xml])
+           [httpeek.xml-formatter :as xml]
+           [httpeek.json-formatter :as json])
   (:import [java.io StringReader StringWriter]
            [javax.xml.transform TransformerFactory OutputKeys]
            [org.xml.sax SAXParseException]
@@ -63,13 +64,8 @@
    (map (fn [[k v]] [:li.mdl-list__item
                      [:p [:b (name k) ] (str ": " v)]]) headers)])
 
-(defn- format-json [body]
-  (-> body
-    cheshire.core/decode
-    (cheshire.core/encode {:pretty true})))
-
 (def display-content-map
-  {"application/json" format-json
+  {"application/json" json/format-json
    "text/xml" xml/format-xml
    "application/xml" xml/format-xml
    "application/x-www-form-urlencoded" identity})
