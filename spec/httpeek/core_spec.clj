@@ -97,10 +97,9 @@
     (it "only deletes requests associated with the deleted bin"
       (let [bin-id (create-bin {:private false})
             first-request-id (add-request bin-id (json/encode {:position "first"}))
-            second-request-id (add-request bin-id (json/encode {:position "second"}))
-            requests (get-requests bin-id)]
+            second-request-id (add-request bin-id (json/encode {:position "second"}))]
         (delete-bin "some-other-bin-id")
-        (should-not (empty? requests))))
+        (should-not (empty? (get-requests bin-id)))))
 
   (context "deleting a non-existent bin"
     (it "returns nil"
