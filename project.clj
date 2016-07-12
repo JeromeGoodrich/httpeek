@@ -13,12 +13,13 @@
                            [environ "1.0.3"]
                            [speclj "3.3.1"]
                            [cheshire "5.6.2"]
+                           [org.clojure/data.xml "0.0.8"]
                            [ring/ring-json "0.4.0"]]
             :profiles {:test {:dependencies [[speclj "3.3.1"]]}}
             :plugins [[speclj "3.3.1"]
                       [lein-environ "1.0.3"]
                       [lein-ring "0.9.7"]]
             :test-paths ["spec"]
-            :ring {:handler httpeek.handler/app* :auto-refresh? true}
+            :ring {:handler httpeek.handler/web-routes :auto-reload? true}
             :aliases {"migrate" ["run" "-m" "httpeek.migrations/migrate"]
                       "rollback" ["run" "-m" "httpeek.migrations/rollback"]})

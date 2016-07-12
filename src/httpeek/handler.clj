@@ -1,9 +1,9 @@
 (ns httpeek.handler
   (:use compojure.core)
   (:require [ring.util.response :as response]
-            [ring.middleware.params :as middleware]
             [ring.middleware.session :as session]
             [ring.middleware.json :as ring-json]
+            [clojure.data.xml :as xml]
             [compojure.route :as route]
             [httpeek.core :as core]
             [cheshire.core :as json]
@@ -13,19 +13,26 @@
   (core/with-error-handling nil
                             (java.util.UUID/fromString uuid-string)))
 
-(defn- handle-web-inspect-bin [id session]
+(defn- handle-web-inspect-bin [id session {:strs [host] :as headers}]
   (let [requested-bin (core/find-bin-by-id id)
         private? (:private requested-bin)
         permitted? (some #{id} (:private-bins session))]
+
     (if requested-bin
       (if (and private? (not permitted?))
         (response/status (response/response "private bin") 403)
-        (views/inspect-bin-page id (core/get-requests id)))
+        (views/inspect-bin-page id host (core/get-requests id)))
       (response/not-found (views/not-found-page)))))
 
+(defn- slurp-body [request]
+  (if (:body request)
+    (update request :body slurp)
+    request))
+
 (defn- parse-request-to-bin [request]
-  (let [id (str->uuid (get-in request [:params :id]))
-        body (json/encode (dissoc request :body))
+  (let [request (slurp-body request)
+        id (str->uuid (get-in request [:params :id]))
+        body (json/encode request {:pretty true})
         requested-bin (core/find-bin-by-id id)]
     {:requested-bin requested-bin
      :body body}))
@@ -48,10 +55,11 @@
       (response/redirect (format "/bin/%s/inspect" bin-id)))))
 
 (defn- handle-web-delete-bin [id]
-  (if-let [bin-id (core/find-bin-by-id (str->uuid id))]
-    (do (core/delete-bin bin-id)
-      (response/redirect "/" 302))
-    (response/not-found (views/not-found-page))))
+  (let [bin-id (str->uuid id)
+        delete-count (core/delete-bin bin-id)]
+    (if (< 0 delete-count)
+      (response/redirect "/" 302)
+      (response/not-found (views/not-found-page)))))
 
 (defn- handle-web-request-to-bin [request]
   (-> request
@@ -100,16 +108,14 @@
 (defroutes web-routes
   (GET "/" [] (views/index-page))
   (POST "/bins" {form-params :form-params} (handle-web-create-bin form-params))
-  (GET "/bin/:id/inspect" [id :as {session :session}] (handle-web-inspect-bin (str->uuid id) session))
+  (GET "/bin/:id/inspect" [id :as {session :session headers :headers}] (handle-web-inspect-bin (str->uuid id) session headers))
   (ANY "/bin/:id" req (handle-web-request-to-bin req))
-  (DELETE "/bin/:id/delete" [id] (handle-web-delete-bin id))
+  (POST "/bin/:id/delete" [id] (handle-web-delete-bin id))
   (route/resources "/")
   (route/not-found (views/not-found-page)))
 
 (def app*
   (routes (-> api-routes
-            (wrap-routes ring-json/wrap-json-response)
             (ring-json/wrap-json-response))
           (-> web-routes
-            (middleware/wrap-params)
             (session/wrap-session))))

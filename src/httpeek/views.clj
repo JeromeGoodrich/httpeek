@@ -1,6 +1,7 @@
 (ns httpeek.views
   (require [hiccup.page :as page]
            [httpeek.core :as core]
+           [httpeek.content-type-presenter :as presenter]
            [hiccup.core :as h]))
 
 (defn navbar []
@@ -24,7 +25,8 @@
 (defn head []
   [:head (page/include-css "https://fonts.googleapis.com/icon?family=Material+Icons"
                            "https://code.getmdl.io/1.1.3/material.light_blue-indigo.min.css"
-                           "/css/main.css")])
+                           "/css/main.css")
+   (page/include-js "https://code.getmdl.io/1.1.3/material.min.js")])
 
 (defn index-card []
   [:div.index-card.mdl-card.mdl-shadow--2dp
@@ -36,14 +38,14 @@
     [:form {:action "/bins" :method "post"}
      [:button.mdl-button.mdl.button--fab.mdl-button--colored {:type "submit"} (h/h "Create Bin")
       [:i.material-icons (h/h "add")]]
-     [:input {:type "checkbox" :value "true" :name "private-bin?"}]]]])
+     [:input {:type "checkbox" :value "true" :name "private-bin?"} (h/h "make this bin private")]]]])
 
 (defn list-bin-history []
   [:ul
    (let [list-of-ids (map :id (core/get-bins {:limit 50}))]
      (for [id list-of-ids]
        [:li
-        [:a.mdl-button.mdl-button--colored  {:href (h/h (str "/bin/" id "?inspect"))} (h/h (str "Bin: " id))]]))])
+        [:a.mdl-button.mdl-button--colored  {:href (h/h (format "/bin/%s/inspect" id))} (h/h (str "Bin: " id))]]))])
 
 (defn history-card []
   [:div.index-card.mdl-card.mdl-shadow--2dp
@@ -54,24 +56,53 @@
 
 (defn list-headers [headers]
   [:ul.mdl-list
-   (map (fn [[k v]] [:li.mdl-list__item (str (name k) ": " v)]) headers)])
+   (map (fn [[k v]] [:li.mdl-list__item
+                     [:p [:b (name k) ] (str ": " v)]]) headers)])
+
+(defn raw-headers [headers]
+   (map (fn [[k v]] [:li
+                     (str (name k) ": " v)]) headers))
+
+(defn display-raw-request [{:keys [request-method protocol uri headers body] :as full-request}]
+  [:ul.raw-request
+   [:li (str (clojure.string/upper-case request-method) " "
+             uri " "
+             (clojure.string/upper-case protocol) "\r\n")]
+   (raw-headers headers)
+   (if (not (empty? body))
+   [:li body])])
 
 (defn request-card [request]
-  (let [{:keys [created_at]} request
-        {{:keys [headers content-length form-params
-                 query-params uri request-method]} :full_request} request]
+  (let [{:keys [created_at full_request]} request
+        {{:keys [headers body
+                 request-method]} :full_request} request]
     [:div.request-card.mdl-card.mdl-shadow--2dp
      [:div.mdl-card__title
-      [:h2.mdl-card__title-text (h/h (str request-method))]
-      [:h3.mdl-card__subtitle-text (h/h (str uri query-params))]]
+      [:h2.mdl-card__title-text (h/h (clojure.string/upper-case request-method))]]
      [:div.mdl-card__supporting-text (h/h (str created_at))]
-     [:div.mdl-card__actions.mdl-card--border
-      [:div.mdl-grid
-       [:div.mdl-cell.mdl-cell--4-col (h/h (str "Form/Post Params"))]
-       [:div.mdl-cell.mdl-cell--6-col (h/h (str "Headers"))]]
-      [:div.mdl-grid
-       [:div.mdl-cell.mdl-cell--4-col (h/h (str form-params))]
-       [:div.mdl-cell.mdl-cell--6-col (list-headers headers)]]]]))
+     [:div.mdl-tabs.mdl-js-tabs
+      [:div.mdl-tabs__tab-bar
+       [:a.mdl-tabs__tab.is-active {:href "#formatted-request"} "Formatted-Request"]
+       [:a.mdl-tabs__tab {:href "#raw-request"} "Raw-Request"]]
+      [:div#formatted-request.mdl-tabs__panel.is-active
+       [:div.mdl-card__actions.mdl-card--border
+        [:div.mdl-grid
+         [:div.mdl-cell.mdl-cell--6-col
+          [:h4 (h/h (str "Headers"))]]
+         [:div.mdl-cell.mdl-cell--6-col
+          [:h4 (h/h (str "Request Body"))]]]
+        [:div.mdl-grid
+         [:div.mdl-cell.mdl-cell--6-col (list-headers headers)]
+         (if-let [content-type (:content-type headers)]
+           [:div.mdl-cell.mdl-cell--6-col
+            [:pre (h/h (presenter/present-content-type content-type body))]])]]]
+      [:div#raw-request.mdl-tabs__panel
+        [:div.mdl-card__actions.mdl-card--border
+        [:div.mdl-grid
+         [:div.mdl-cell.mdl-cell--8-col
+          [:h4 (h/h (str "Raw Request"))]]]
+        [:div.mdl-grid
+         [:div.mdl-cell.mdl-cell--8-col (display-raw-request full_request)]]]]]]))
 
 (defn index-html []
   [:body
@@ -85,22 +116,25 @@
     [:div
      [:h1 (h/h "Sorry! The Page You were looking for cannot be found")]]))
 
-(defn code-example-card []
+(defn code-example-card [host id]
   [:div.index-card.mdl-card.mdl-shadow--2dp
    [:div.mdl-card__title
     [:h2.mdl-card__title-text (h/h "make a request to get started")]]
    [:div.mdl-card__actions.mdl-card--border
-    [:code (h/h "curl -X POST -d foo=bar 'this bin url'")]]])
+    [:code (h/h (format "curl -X POST -d foo=bar %s/bin/%s" host id))]]])
 
-(defn inspect-html [id requests]
+(defn inspect-html [id host requests]
   [:body
    (navbar)
    [:main.mdl-layout__content
-    [:h3.bin-title (h/h (str "Bin-Url: /bin/" id))]]
+    [:h4.bin-title (h/h (format "URL: %s/bin/%s" host id))]
+    [:form.bin-title {:action (h/h (format "/bin/%s/delete" id)) :method "POST"}
+     [:button.mdl-button.mdl-js-button.mdl.button--fab.mdl-button--colored {:type "submit"} (h/h "Delete Bin")
+      [:i.material-icons (h/h "delete")]]]
    (if (= (count requests) 0)
-     (code-example-card)
+     (code-example-card host id)
      (for [request requests]
-       (request-card request)))])
+       (request-card request)))]])
 
 (defn wrap-layout [component]
   (page/html5
@@ -111,8 +145,8 @@
 (defn index-page []
   (wrap-layout (index-html )))
 
-(defn inspect-bin-page [bin-id requests]
-  (wrap-layout (inspect-html bin-id requests)))
+(defn inspect-bin-page [bin-id host requests]
+  (wrap-layout (inspect-html bin-id host requests)))
 
 (defn not-found-page []
   (wrap-layout (not-found-html)))

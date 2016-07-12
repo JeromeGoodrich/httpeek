@@ -64,8 +64,7 @@
         (should= first-request-id (:id (first requests)))
         (should= {:position "first"} (:full_request (first requests)))
         (should= second-request-id (:id (second requests)))
-        (should= {:position "second"} (:full_request (second requests)))
-        )))
+        (should= {:position "second"} (:full_request (second requests))))))
 
   (context "deleting a bin"
     (it "removes a record from the bin table"
@@ -79,4 +78,12 @@
       (let [bin-id (create-bin false)
             fake-bin-id nil]
         (should= 1 (delete-bin bin-id))
-        (should= 0 (delete-bin fake-bin-id))))))
+        (should= 0 (delete-bin fake-bin-id))))
+
+    (it "deletes all requests associated with a deleted bin"
+      (let [bin-id (create-bin false)
+            first-request-id (add-request bin-id (json/encode {:position "first"}))
+            second-request-id (add-request bin-id (json/encode {:position "second"}))]
+        (delete-bin bin-id)
+        (should-be-nil (find-request-by-id first-request-id))
+        (should-be-nil (find-request-by-id second-request-id))))))

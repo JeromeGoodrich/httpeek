@@ -3,6 +3,7 @@
             [httpeek.handler :refer :all]
             [ring.mock.request :as mock]
             [httpeek.spec-helper :as helper]
+            [ring.util.io :as r-io]
             [cheshire.core :as json]
             [httpeek.core :as core]))
 
@@ -119,18 +120,16 @@
     (context "getting an existing private bin with request added"
       (it "returns a 200 status"
         (let  [bin-id (core/create-bin {:private true})
-               valid-request (web-routes (mock/header (mock/request :get (format "/bin/%s" bin-id)) :foo "bar"))
+               valid-request (web-routes (assoc (mock/request :get (format "/bin/%s" bin-id)) :protocol "HTTP/1.1"))
                response (web-routes (assoc (mock/request :get (format "/bin/%s/inspect" bin-id)) :session {:private-bins [bin-id]}))]
-          (should= 200 (:status response))
-          (should-contain "foo: bar" (:body response)))))
+          (should= 200 (:status response)))))
 
     (context "getting an existing public bin with request added"
       (it "returns a 200 status"
         (let  [bin-id (core/create-bin {:private false})
-               valid-request (web-routes (mock/header (mock/request :get (format "/bin/%s" bin-id)) :foo "bar"))
+               valid-request (web-routes (assoc (mock/request :get (format "/bin/%s" bin-id)) :protocol "HTTP/1.1"))
                response (web-routes (mock/request :get (format "/bin/%s/inspect" bin-id)))]
-          (should= 200 (:status response))
-          (should-contain "foo: bar" (:body response)))))
+          (should= 200 (:status response)))))
 
     (context "getting a non-existent bin"
       (it "returns a 404 status"
@@ -169,10 +168,10 @@
    (context "DELETE request to existing bin"
      (it "redirects to the index page"
       (let [bin-id (core/create-bin {:private false})
-            response (app* (mock/request :delete (str "/bin/" bin-id "/delete")))]
+            response (app* (mock/request :post (str "/bin/" bin-id "/delete")))]
         (should= 302 (:status response)))))
 
    (context "DELETE request to non-existent bin"
      (it "returns a 404 status"
-      (let [response (app* (mock/request :delete (str "/bin/" -1 "/delete")))]
+      (let [response (app* (mock/request :post (str "/bin/" -1 "/delete")))]
         (should= 404 (:status response)))))))
