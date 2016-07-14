@@ -3,15 +3,13 @@
 
 (defmacro with-error-handling [default form]
   `(try
-    ~form
-    (catch Exception e#
-      ~default)))
+     ~form
+     (catch Exception e#
+       ~default)))
 
-(defn create-bin
-  ([private-bin?] (with-error-handling nil
-                                       (db/create-bin (:private private-bin?))))
-  ([private-bin? custom-response] (with-error-handling nil
-                                                       (db/create-bin (:private private-bin?) custom-response))))
+(defn create-bin [private-bin? response]
+  (with-error-handling nil
+    (db/create-bin (:private private-bin?) response)))
 
 (defn find-bin-by-id [id]
   (with-error-handling nil

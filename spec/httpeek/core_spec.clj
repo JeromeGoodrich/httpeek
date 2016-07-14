@@ -9,7 +9,7 @@
 
   (context "retrieving bins"
     (it "returns a set amount of bins"
-      (let [bins (repeatedly 50 #(create-bin {:private false}))]
+      (let [bins (repeatedly 50 #(create-bin {:private false} helper/bin-response))]
         (should= (count bins) (count (get-bins {:limit 50})))))
 
     (it "returns 0 for an invalid limit"
@@ -18,13 +18,13 @@
   (context "creating a bin"
     (it "increases the bin count by 1"
       (let [bin-count (count (get-bins {:limit 50}))]
-      (create-bin {:private false} (json/encode {:status 200 :headers {:foo "bar"}}))
+      (create-bin {:private false} helper/bin-response)
       (should= (+ 1 bin-count)
                (count (get-bins {:limit 50})))))
 
     (it "it does not create the bin if the arguments are wrong"
       (let [bin-count (count (get-bins {:limit 50}))
-            malformed-bin (create-bin {:private nil})
+            malformed-bin (create-bin {:private nil} helper/bin-response)
             another-malformed-bin (create-bin {:private false} "not a json string")]
         (should= bin-count (count (get-bins {:limit 50})))
         (should-be-nil malformed-bin)
@@ -32,7 +32,7 @@
 
   (context "finding a bin"
     (it "finds an existing bin"
-      (let [bin-id (create-bin {:private false})]
+      (let [bin-id (create-bin {:private false} helper/bin-response)]
         (should= bin-id (:id (find-bin-by-id bin-id)))))
 
     (it "returns nil if the bin doesn't exist"
@@ -41,20 +41,20 @@
 
   (context "adding a request to an exisiting bin"
     (it "increases the request count by 1"
-      (let [bin-id (create-bin {:private false})
+      (let [bin-id (create-bin {:private false} helper/bin-response)
             request-count (count (all-requests))]
         (add-request bin-id (json/encode {:foo "bar"}))
         (should= (+ 1 request-count)
                  (count (all-requests)))))
 
     (it "should return not nil"
-      (let [bin-id (create-bin {:private false})
+      (let [bin-id (create-bin {:private false} helper/bin-response)
             request-id (add-request bin-id (json/encode {:foo "bar"}))]
         (should-not-be-nil request-id))))
 
   (context "adding an invalid request to an existing bin"
     (it "doesn't increase the  request count"
-      (let [bin-id (create-bin {:private false})
+      (let [bin-id (create-bin {:private false} helper/bin-response)
             invalid-full-request '(1 2 3)
             request-count (count (all-requests))]
         (add-request bin-id invalid-full-request)
@@ -62,7 +62,7 @@
                  (count (all-requests)))))
 
     (it "should return nil"
-      (let [bin-id (create-bin {:private false})
+      (let [bin-id (create-bin {:private false} helper/bin-response)
             invalid-full-request '(1 2 3)
             request-id (add-request bin-id invalid-full-request)]
         (should-be-nil request-id))))
@@ -83,7 +83,7 @@
 
   (context "getting the requests of a bin"
     (it "returns all the requests related to a bin"
-      (let [bin-id (create-bin {:private false})]
+      (let [bin-id (create-bin {:private false} helper/bin-response)]
         (add-request bin-id (json/encode {:foo "bar"}))
         (add-request bin-id (json/encode {:fizz "buzz"}))
         (should= 2 (count (get-requests bin-id)))))
@@ -96,7 +96,7 @@
 
   (context "deleting an existing bin"
     (it "deletes the bin"
-      (let [bin-id (create-bin {:private false})
+      (let [bin-id (create-bin {:private false} helper/bin-response)
             bin-count (count (get-bins {:limit 50}))]
         (delete-bin bin-id)
         (should= (- bin-count 1) (count (get-bins {:limit 50})))
