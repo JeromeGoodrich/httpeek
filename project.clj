@@ -13,6 +13,7 @@
                            [environ "1.0.3"]
                            [speclj "3.3.1"]
                            [cheshire "5.6.2"]
+                           [prismatic/schema "1.1.2"]
                            [org.clojure/data.xml "0.0.8"]
                            [ring/ring-json "0.4.0"]]
             :profiles {:test {:dependencies [[speclj "3.3.1"]]}}
