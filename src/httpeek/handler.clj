@@ -6,6 +6,7 @@
             [ring.middleware.json :as ring-json]
             [schema.core :as s]
             [clojure.data.xml :as xml]
+            [clojure.edn :as edn]
             [compojure.route :as route]
             [httpeek.core :as core]
             [cheshire.core :as json]
@@ -48,35 +49,54 @@
     (add-request-to-bin bin-id body)
     (response/not-found (views/not-found-page))))
 
-(defn- get-headers [header-names header-values]
-  (if (or (nil? header-names) (nil? header-values))
-    {}
-    (zipmap (map #(name %) header-names)
-            (map #(name %) header-values))))
+(def response-map-skeleton
+  {(s/required-key :status) s/Int
+   (s/required-key :headers) {s/Keyword s/Str}
+   (s/optional-key :body) s/Str})
 
-(defn- create-custom-response [form-params]
-  (let [status (read-string (get form-params "status"))
-        headers (get-headers (clojure.edn/read-string (get form-params "header-name[]"))
-                             (clojure.edn/read-string (get form-params "header-value[]")))]
-    (json/encode {:status status
-                  :headers headers
-                  :body ""})))
+(defn- validate-response-map [body]
+  (s/validate response-map-skeleton body))
+
+(defn- create-headers [header-names header-values]
+  (if (= (count header-names) (count header-values))
+    (if (or (nil? header-names) (nil? header-values))
+      {}
+      (zipmap (map #(keyword %) header-names)
+              (map #(name %) header-values)))
+    nil))
+
+(defn- get-form-attribute [form-params attr]
+  (->> attr
+    (get form-params)
+    (edn/read-string)))
+
+(defn- create-bin-response [form-params]
+  (let [status (get-form-attribute form-params "status")
+        headers (create-headers (get-form-attribute form-params "header-name[]")
+                                (get-form-attribute form-params "header-value[]"))
+        body (get form-params "body")
+        response-map {:status status
+                      :headers headers
+                      :body body}]
+    (core/with-error-handling nil
+                              (json/encode (validate-response-map response-map)))))
 
 (defn- handle-web-create-bin [req]
   (let [form-params (:form-params req)
         private? (boolean (get form-params "private-bin"))
-        custom-response (create-custom-response form-params)
-        bin-id (core/create-bin {:private private?} custom-response)]
-  (if private?
-      (-> (response/redirect (format "/bin/%s/inspect" bin-id))
-        (assoc-in [:session] {:private-bins [bin-id]}))
-      (response/redirect (format "/bin/%s/inspect" bin-id)))))
+        bin-response (create-bin-response form-params)]
+    (if-let [bin-id (core/create-bin {:private private?} bin-response)]
+      (if private?
+        (-> (response/redirect (format "/bin/%s/inspect" bin-id))
+          (assoc-in [:session] {:private-bins [bin-id]}))
+        (response/redirect (format "/bin/%s/inspect" bin-id)))
+      {:status 400 :headers {} :body "Bad Request"})))
 
 (defn- handle-web-delete-bin [id]
   (let [bin-id (str->uuid id)
         delete-count (core/delete-bin bin-id)]
     (if (< 0 delete-count)
-      (response/redirect "/" 302)
+      (response/redirect "/")
       (response/not-found (views/not-found-page)))))
 
 (defn- handle-web-request-to-bin [request]
@@ -88,32 +108,24 @@
   (response/not-found {:message message}))
 
 (defn- handle-api-get-bin [id]
-  (prn (core/find-bin-by-id (str->uuid id)))
   (if-let [bin (core/find-bin-by-id (str->uuid id))]
     (:response bin)
     (handle-api-not-found (format "The bin %s does not exist" id))))
-
-(def response-map-skeleton
-  {(s/required-key :status) s/Int
-   (s/required-key :headers) {s/Keyword s/Str}
-   (s/optional-key :body) s/Str})
-
-(defn- validate-response-map [body]
-  (s/validate response-map-skeleton body))
 
 (defn- get-response-data-from-body [body]
     (validate-response-map body))
 
 (defn- response-config [body]
-  (core/with-error-handling (response/response 400)
+  (core/with-error-handling nil
                             (get-response-data-from-body body)))
 
 (defn- handle-api-create-bin [body {:strs [host] :as headers}]
-  (let [response (response-config body)
-        bin-id (core/create-bin {:private false} response)]
-    (response/response {:bin-url (format "http://%s/bin/%s" host bin-id)
-                        :inspect-url (format "http://%s/bin/%s/inspect" host bin-id)
-                        :delete-url (format "http://%s/bin/%s/delete" host bin-id)})))
+  (if-let [response (response-config body)]
+    (let [bin-id (core/create-bin {:private false} (json/encode response))]
+      (response/response {:bin-url (format "http://%s/bin/%s" host bin-id)
+                          :inspect-url (format "http://%s/bin/%s/inspect" host bin-id)
+                          :delete-url (format "http://%s/bin/%s/delete" host bin-id)}))
+    {:status 400 :headers {} :body "Bad Request"}))
 
 (defn- handle-api-delete-bin [id]
   (let [bin-id (str->uuid id)

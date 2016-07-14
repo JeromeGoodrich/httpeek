@@ -21,7 +21,7 @@
           (should= (str bin-id) (get (first (get body "bins")) "id")))))
 
     (context "GET /bin/:id/inspect"
-      (it "returns a json repsonse for inspecting an existing bin"
+      (it "returns a json response for inspecting an existing bin"
         (let [bin-id (core/create-bin {:private false} helper/bin-response)
               request (core/add-request bin-id (json/encode (mock/request :get (format "/bin/%s" bin-id))))
               response (app* (mock/request :get (format "/api/bin/%s/inspect" bin-id)))
@@ -48,17 +48,37 @@
           (should= "application/json; charset=utf-8" (get-in response [:headers "Content-Type"])))))
 
     (context "POST /bins"
-      (it "returns a json response for creating a bin"
-        (let [response (-> (mock/request :post "/api/bins")
-                         (assoc :body (r-io/string-input-stream helper/bin-response))
-                         (assoc-in [:headers "host"] "localhost")
-                         (assoc-in [:headers "content-type"] "application/json")
-                         (app*))
-              bin-id (->> (core/get-bins {:limit 50}) (sort-by :created_at) last :id)
-              body  (json/decode (:body response))]
-          (should= 200 (:status response))
-          (should= "application/json; charset=utf-8" (get-in response [:headers "Content-Type"]))
-          (should= (format "http://localhost/bin/%s" bin-id) (get body "bin-url")))))
+      (defn- api-create-bin-response [json-request-body-string]
+        (-> (mock/request :post "/api/bins")
+          (assoc :body (r-io/string-input-stream json-request-body-string))
+          (assoc-in [:headers "content-type"] "application/json")
+          app*))
+
+      (context "When a bin is successfully created"
+        (it "returns a successful json response"
+          (let  [response (api-create-bin-response helper/bin-response)
+                bin-id (->> (core/get-bins {:limit 50}) (sort-by :created_at) last :id)
+                body  (json/decode (:body response))]
+            (should= 200 (:status response))
+            (should= "application/json; charset=utf-8" (get-in response [:headers "Content-Type"]))
+            (should= (format "http://localhost/bin/%s" bin-id) (get body "bin-url"))))
+
+        (it "Created a bin with the correct response attributes"
+          (api-create-bin-response helper/bin-response)
+          (let [bin (->> (core/get-bins {:limit 50}) (sort-by :created-at) last)]
+            (should= 500 (:status (:response bin)))
+            (should= {:foo "bar"} (:headers (:response bin)))
+            (should= "hello world" (:body (:response bin))))))
+
+      (context "When a bin creation attempt is unsuccessful"
+        (it "doesn't create a bin if there is no status in the response-map"
+          (api-create-bin-response (json/encode {:headers {} :body ""}))
+          (let [bin (->> (core/get-bins {:limit 50}) (sort-by :created-at) last)]
+            (should-be-nil bin)))
+
+        (it "returns a status of 400"
+          (let [response (api-create-bin-response (json/encode {:headers {} :body ""}))]
+            (should= 400 (:status response))))))
 
     (context "not found"
       (it "returns a json response for a resource that can't be found"
@@ -79,35 +99,66 @@
                  (:status response)))))
 
   (context "POST /bins"
-    ;don't redirect if no status or if either header name or header value are blank
-    ;else redirect
-    (context "a bin is successfully created when only a status is specified for the response"
-      (it "redirects to the bin's inspect page"
-        (let [request (-> (mock/request :post "/bins")
-                         (assoc :body (r-io/string-input-stream "status=500&header-name[]=&header-value[]=&body="))
-                         (assoc-in [:headers "content-type"] "application/x-www-form-urlencoded"))
-              response (app* request)
-              bin (->> (core/get-bins {:limit 50}) (sort-by :created-at) last)]
-          (should= 302 (:status response))
-          (should= (format "/bin/%s/inspect" (:id bin)) (get-in response [:headers "Location"]))
-          (should= 500 (:status (:response bin)))
-          (should= {} (:headers (:response bin)))
-          (should= "" (:body (:response bin))))))
+    (defn- create-bin-response [request-body-string]
+      (-> (mock/request :post "/bins")
+        (assoc :body (r-io/string-input-stream request-body-string))
+        (assoc-in [:headers "content-type"] "application/x-www-form-urlencoded")
+        app*))
 
-    (context "a bin is successfully created when a status and headers are specified for the response"
-      (it "redirects to the bin's inspect page"
-        (let [request (-> (mock/request :post "/bins")
-                         (assoc :body (r-io/string-input-stream "status=500&header-name[]=[foo baz]&header-value[]=[bar buzz]&body="))
-                         (assoc-in [:headers "content-type"] "application/x-www-form-urlencoded"))
-              response (app* request)
-              bin (->> (core/get-bins {:limit 50}) (sort-by :created-at) last)]
-          (should= 302 (:status response))
-          (should= (format "/bin/%s/inspect" (:id bin)) (get-in response [:headers "Location"]))
-          (should= 500 (:status (:response bin)))
-          (should= {:foo "bar" :baz "buzz"} (:headers (:response bin)))
-          (should= "" (:body (:response bin)))))))
+    (context "When a bin is successfully created"
+      (context "And only a status is specified for the response"
+        (it "creates a bin with the correct response attributes"
+          (let [response (create-bin-response "status=500&header-name[]=&header-value[]=&body=")
+                bin (->> (core/get-bins {:limit 50}) (sort-by :created-at) last)]
+            (should= 500 (:status (:response bin)))
+            (should= {} (:headers (:response bin)))
+            (should= "" (:body (:response bin))))))
 
+      (context "And a status and headers are specified for the response"
+        (it "creates a bin with the correct response attributes"
+          (let [response (create-bin-response "status=500&header-name[]=[foo baz]&header-value[]=[bar buzz]&body=")
+                bin (->> (core/get-bins {:limit 50}) (sort-by :created-at) last)]
+            (should= 500 (:status (:response bin)))
+            (should= {:foo "bar" :baz "buzz"} (:headers (:response bin)))
+            (should= "" (:body (:response bin))))))
 
+      (context "And status, headers and body are specified for the response"
+        (it "creates a bin with the correct response attributes"
+          (let [response (create-bin-response "status=500&header-name[]=[foo baz]&header-value[]=[bar buzz]&body=cash rules everything around me")
+                bin (->> (core/get-bins {:limit 50}) (sort-by :created-at) last)]
+            (should= 500 (:status (:response bin)))
+            (should= {:foo "bar" :baz "buzz"} (:headers (:response bin)))
+            (should= "cash rules everything around me" (:body (:response bin))))))
+
+      (context "With valid response attributes"
+        (it "redirects to the bin's inspect page"
+          (let [response (create-bin-response "status=500&header-name[]=[foo baz]&header-value[]=[bar buzz]&body=cash rules everything around me")
+                bin (->> (core/get-bins {:limit 50}) (sort-by :created-at) last)]
+            (should= 302 (:status response))
+            (should= (format "/bin/%s/inspect" (:id bin)) (get-in response [:headers "Location"]))))))
+
+    (context "When a bin creation attempt is unsuccessful"
+      (context "and no status is specified in the response"
+        (it "doesn't create the bin"
+          (let [response (create-bin-response "status=&header-name[]=[foo baz]&header-value[]=[bar buzz]&body=cash rules everything around me")
+                bin (->> (core/get-bins {:limit 50}) (sort-by :created-at) last)]
+            (should-be-nil bin)))
+
+        (it "returns a 400 status"
+          (let [response (create-bin-response "status=&header-name[]=[foo baz]&header-value[]=[bar buzz]&body=cash rules everything around me")
+                bin (->> (core/get-bins {:limit 50}) (sort-by :created-at) last)]
+            (should= 400 (:status response)))))
+
+      (context "and headers are not filled out properly"
+        (it "doesn't create the bin"
+          (let [response (create-bin-response "status=600&header-name[]=[foo baz]&header-value[]=[bar]&body=cash rules everything around me")
+                bin (->> (core/get-bins {:limit 50}) (sort-by :created-at) last)]
+            (should-be-nil bin)))
+
+        (it "returns a 400 status"
+          (let [response (create-bin-response "status=600&header-name[]=[foo baz]&header-value[]=[bar]&body=cash rules everything around me")
+                bin (->> (core/get-bins {:limit 50}) (sort-by :created-at) last)]
+            (should= 400 (:status response)))))))
 
   (context  "GET /bin/:id/inspect"
     (context "getting an existing private bin with no requests"
