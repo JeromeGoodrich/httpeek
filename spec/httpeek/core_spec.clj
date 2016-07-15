@@ -103,7 +103,7 @@
         (should-be-nil (find-bin-by-id bin-id))))
 
     (it "only deletes requests associated with the deleted bin"
-      (let [bin-id (create-bin {:private false})
+      (let [bin-id (create-bin {:private false} helper/bin-response)
             first-request-id (add-request bin-id (json/encode {:position "first"}))
             second-request-id (add-request bin-id (json/encode {:position "second"}))]
         (delete-bin "some-other-bin-id")
