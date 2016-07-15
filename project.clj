@@ -21,6 +21,6 @@
                       [lein-environ "1.0.3"]
                       [lein-ring "0.9.7"]]
             :test-paths ["spec"]
-            :ring {:handler httpeek.handler/web-routes :auto-reload? true}
+            :ring {:handler httpeek.handler/app* :auto-reload? true}
             :aliases {"migrate" ["run" "-m" "httpeek.migrations/migrate"]
                       "rollback" ["run" "-m" "httpeek.migrations/rollback"]})
