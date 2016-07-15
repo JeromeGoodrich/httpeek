@@ -58,7 +58,7 @@
         (it "returns a successful json response"
           (let  [response (api-create-bin-response helper/bin-response)
                 bin-id (->> (core/get-bins {:limit 50}) (sort-by :created_at) last :id)
-                body  (json/decode (:body response))]
+                body (json/decode (:body response))]
             (should= 200 (:status response))
             (should= "application/json; charset=utf-8" (get-in response [:headers "Content-Type"]))
             (should= (format "http://localhost/bin/%s" bin-id) (get body "bin-url"))))
@@ -116,7 +116,7 @@
 
       (context "And a status and headers are specified for the response"
         (it "creates a bin with the correct response attributes"
-          (let [response (create-bin-response "status=500&header-name[]=[foo baz]&header-value[]=[bar buzz]&body=")
+          (let [response (create-bin-response "status=500&header-name[]=foo&header-value[]=bar&header-name[]=baz&header-value[]=buzz&body=")
                 bin (->> (core/get-bins {:limit 50}) (sort-by :created-at) last)]
             (should= 500 (:status (:response bin)))
             (should= {:foo "bar" :baz "buzz"} (:headers (:response bin)))
@@ -124,7 +124,7 @@
 
       (context "And status, headers and body are specified for the response"
         (it "creates a bin with the correct response attributes"
-          (let [response (create-bin-response "status=500&header-name[]=[foo baz]&header-value[]=[bar buzz]&body=cash rules everything around me")
+          (let [response (create-bin-response "status=500&header-name[]=foo&header-value[]=bar&header-name[]=baz&header-value[]=buzz&body=cash rules everything around me")
                 bin (->> (core/get-bins {:limit 50}) (sort-by :created-at) last)]
             (should= 500 (:status (:response bin)))
             (should= {:foo "bar" :baz "buzz"} (:headers (:response bin)))
@@ -132,7 +132,7 @@
 
       (context "With valid response attributes"
         (it "redirects to the bin's inspect page"
-          (let [response (create-bin-response "status=500&header-name[]=[foo baz]&header-value[]=[bar buzz]&body=cash rules everything around me")
+          (let [response (create-bin-response "status=500&header-name[]=foo&header-value[]=bar&header-name[]=baz&header-value[]=buzz&body=cash rules everything around me")
                 bin (->> (core/get-bins {:limit 50}) (sort-by :created-at) last)]
             (should= 302 (:status response))
             (should= (format "/bin/%s/inspect" (:id bin)) (get-in response [:headers "Location"]))))))
@@ -211,7 +211,7 @@
         (let [bin-id (core/create-bin {:private false} helper/bin-response)
               response (app* (mock/request :get (format "/bin/%s" bin-id)))]
           (should= 500 (:status response))
-          (should= {:foo "bar"} (:headers response))
+          (should= {"foo" "bar"} (:headers response))
           (should= "hello world" (:body response)))))
 
     (context "Other request with existing bin"
@@ -219,7 +219,7 @@
         (let [bin-id (core/create-bin {:private false} helper/bin-response)
               response (app* (mock/request :post (format "/bin/%s" bin-id)))]
           (should= 500 (:status response))
-          (should= {:foo "bar"} (:headers response))
+          (should= {"foo" "bar"} (:headers response))
           (should= "hello world" (:body response)))))
 
     (context "GET request with non-existent bin"
@@ -236,7 +236,7 @@
    (context "DELETE request to existing bin"
      (it "redirects to the index page"
       (let [bin-id (core/create-bin {:private false} helper/bin-response)
-            response (app* (mock/request :get (str "/bin/" bin-id "/delete")))]
+            response (app* (mock/request :post (str "/bin/" bin-id "/delete")))]
         (should= 302 (:status response)))))
 
    (context "DELETE request to non-existent bin"

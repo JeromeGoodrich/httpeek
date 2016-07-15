@@ -9,5 +9,5 @@
 
 (def bin-response
     (json/encode {:status 500
-                  :headers {:foo "bar"}
+                  :headers {"foo" "bar"}
                   :body "hello world"}))

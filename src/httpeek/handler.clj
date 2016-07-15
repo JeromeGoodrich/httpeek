@@ -5,8 +5,8 @@
             [ring.middleware.params :as params]
             [ring.middleware.json :as ring-json]
             [schema.core :as s]
-            [clojure.data.xml :as xml]
             [clojure.edn :as edn]
+            [clojure.walk :as walk]
             [compojure.route :as route]
             [httpeek.core :as core]
             [cheshire.core :as json]
@@ -20,7 +20,6 @@
   (let [requested-bin (core/find-bin-by-id id)
         private? (:private requested-bin)
         permitted? (some #{id} (:private-bins session))]
-
     (if requested-bin
       (if (and private? (not permitted?))
         (response/status (response/response "private bin") 403)
@@ -42,7 +41,8 @@
 
 (defn- add-request-to-bin [id request-body]
   (core/add-request id request-body)
-  (:response (core/find-bin-by-id id)))
+  (let [response (:response (core/find-bin-by-id id))]
+    (update response :headers walk/stringify-keys)))
 
 (defn- route-request-to-bin [{:keys [requested-bin body] :as parsed-request}]
   (if-let [bin-id (:id requested-bin)]
@@ -51,7 +51,7 @@
 
 (def response-map-skeleton
   {(s/required-key :status) s/Int
-   (s/required-key :headers) {s/Keyword s/Str}
+   (s/required-key :headers) {s/Str s/Str}
    (s/optional-key :body) s/Str})
 
 (defn- validate-response-map [body]
@@ -61,19 +61,14 @@
   (if (= (count header-names) (count header-values))
     (if (or (nil? header-names) (nil? header-values))
       {}
-      (zipmap (map #(keyword %) header-names)
+      (zipmap (map #(name %) header-names)
               (map #(name %) header-values)))
     nil))
 
-(defn- get-form-attribute [form-params attr]
-  (->> attr
-    (get form-params)
-    (edn/read-string)))
-
 (defn- create-bin-response [form-params]
-  (let [status (get-form-attribute form-params "status")
-        headers (create-headers (get-form-attribute form-params "header-name[]")
-                                (get-form-attribute form-params "header-value[]"))
+  (let [status (edn/read-string(get form-params "status"))
+        headers (create-headers (get form-params "header-name[]")
+                                (get form-params "header-value[]"))
         body (get form-params "body")
         response-map {:status status
                       :headers headers
@@ -107,24 +102,17 @@
 (defn- handle-api-not-found [message]
   (response/not-found {:message message}))
 
-(defn- handle-api-get-bin [id]
-  (if-let [bin (core/find-bin-by-id (str->uuid id))]
-    (:response bin)
-    (handle-api-not-found (format "The bin %s does not exist" id))))
-
-(defn- get-response-data-from-body [body]
-    (validate-response-map body))
-
 (defn- response-config [body]
-  (core/with-error-handling nil
-                            (get-response-data-from-body body)))
+  (let [formatted-body (update body :headers walk/stringify-keys)]
+    (core/with-error-handling nil
+                            (validate-response-map formatted-body))))
 
 (defn- handle-api-create-bin [body {:strs [host] :as headers}]
   (if-let [response (response-config body)]
     (let [bin-id (core/create-bin {:private false} (json/encode response))]
       (response/response {:bin-url (format "http://%s/bin/%s" host bin-id)
                           :inspect-url (format "http://%s/bin/%s/inspect" host bin-id)
-                          :delete-url (format "http://%s/bin/%s/delete" host bin-id)}))
+                          :delete-url (format "http://%s/api/bin/%s/" host bin-id)}))
     {:status 400 :headers {} :body "Bad Request"}))
 
 (defn- handle-api-delete-bin [id]
@@ -164,7 +152,7 @@
 
 (def app*
   (routes (-> api-routes
-            (ring-json/wrap-json-body {:keywords? true})
+            (wrap-routes ring-json/wrap-json-body {:keywords? true})
             (ring-json/wrap-json-response))
           (-> web-routes
             (session/wrap-session))))
