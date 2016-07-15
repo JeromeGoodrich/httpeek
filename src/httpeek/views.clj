@@ -1,5 +1,6 @@
 (ns httpeek.views
   (require [hiccup.page :as page]
+           [hiccup.element :as elem]
            [httpeek.core :as core]
            [httpeek.content-type-presenter :as presenter]
            [hiccup.core :as h]))
@@ -26,7 +27,35 @@
   [:head (page/include-css "https://fonts.googleapis.com/icon?family=Material+Icons"
                            "https://code.getmdl.io/1.1.3/material.light_blue-indigo.min.css"
                            "/css/main.css")
-   (page/include-js "https://code.getmdl.io/1.1.3/material.min.js")])
+   (page/include-js "https://code.getmdl.io/1.1.3/material.min.js"
+                    "/js/views.js")])
+
+(def create-bin-form
+  [:div.mdl-grid
+   [:div.mdl-cell.mdl-cell--12-col
+    [:form#creat-bin-form {:action "/bins" :method "post"}
+     [:div.mdl-textfield.mdl-js-textfield
+      [:input#bin-response-status.mdl-textfield__input {:type "text" :name "status"}]
+      [:label.mdl-textfield__label {:for "bin-response-status"} (h/h "Status")]]
+     [:div#bin-response-headers.mdl-grid.mdl-grid--nesting
+      [:div#header-name-input.mdl-cell.mdl-cell--4-col
+       [:div.mdl-textfield.mdl-js-textfield
+        [:input#bin-response-header-name.mdl-textfield__input {:type "text" :name "header-name[]"}]
+        [:label.mdl-textfield__label {:for "bin-response-header-name"} (h/h "Header Name")]]]
+      [:div#header-value-input.mdl-cell.mdl-cell--4-col
+       [:div.mdl-textfield.mdl-js-textfield
+        [:input#bin-response-header-value.mdl-textfield__input {:type "text" :name "header-value[]"}]
+        [:label.mdl-textfield__label {:for "bin-response-header-value"} (h/h "Header Value")]]]
+      [:div.mdl-cell.mdl-cell--4-col
+      [:button.mdl-button.mdl-js-button.mdl-button--primary {:type "button" :onclick "addHeaders()"} (h/h "Add Headers")]]]
+     [:div.mdl-textfield.mdl-js-textfield
+      [:textarea#bin-response-body.mdl-textfield__input {:type "text" :name "body"}]
+      [:label.mdl-textfield__label {:for "bin-response-body"} (h/h "Body")]]
+     [:div.mdl-grid.mdl-grid--nesting
+      [:div.mdl-cell.mdl-cell--6-col
+       [:button.mdl-button.mdl-js-button.mdl-button--primary {:type "submit"} (h/h "Create Bin")
+        [:i.material-icons (h/h "add")]]
+       [:input {:type "checkbox" :value "true" :name "private-bin?"} (h/h "make this bin private")]]]]]])
 
 (defn index-card []
   [:div.index-card.mdl-card.mdl-shadow--2dp
@@ -35,10 +64,7 @@
    [:div.mdl-card__supporting-text (h/h "HTTPeek gives you a unique URL that will collect all requests made to it,
                                         and allow you to inspect those requests in a human friendly way.")]
    [:div.mdl-card__actions.mdl-card--border
-    [:form {:action "/bins" :method "post"}
-     [:button.mdl-button.mdl.button--fab.mdl-button--colored {:type "submit"} (h/h "Create Bin")
-      [:i.material-icons (h/h "add")]]
-     [:input {:type "checkbox" :value "true" :name "private-bin?"} (h/h "make this bin private")]]]])
+    create-bin-form]])
 
 (defn list-bin-history []
   [:ul
