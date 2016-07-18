@@ -47,10 +47,12 @@
         [:input#bin-response-header-value.mdl-textfield__input {:type "text" :name "header-value[]"}]
         [:label.mdl-textfield__label {:for "bin-response-header-value"} (h/h "Header Value")]]]
       [:div.mdl-cell.mdl-cell--4-col
-      [:button.mdl-button.mdl-js-button.mdl-button--primary {:type "button" :onclick "addHeaders()"} (h/h "Add Headers")]]]
-     [:div.mdl-textfield.mdl-js-textfield
-      [:textarea#bin-response-body.mdl-textfield__input {:type "text" :name "body"}]
-      [:label.mdl-textfield__label {:for "bin-response-body"} (h/h "Body")]]
+       [:button.mdl-button.mdl-js-button.mdl-button--primary {:type "button" :onclick "addHeaders()"} (h/h "Add Headers")]]]
+     [:div.mdl-grid.mdl-grid--nesting
+      [:div.mdl-cell.mdl-cell--8-col
+       [:div#bin-response-body.mdl-textfield.mdl-js-textfield
+        [:textarea#bin-response-body.mdl-textfield__input {:type "text" :name "body"}]
+        [:label.mdl-textfield__label {:for "bin-response-body"} (h/h "Body")]]]]
      [:div.mdl-grid.mdl-grid--nesting
       [:div.mdl-cell.mdl-cell--6-col
        [:button.mdl-button.mdl-js-button.mdl-button--primary {:type "submit"} (h/h "Create Bin")

@@ -1,12 +1,25 @@
 function addHeaders(){
-  var headerNameInput = document.getElementById('header-name-input');
-  var headerValueInput = document.getElementById('header-value-input');
-  var headerNameClone = headerNameInput.cloneNode(true);
-  var headerValueClone = headerValueInput.cloneNode(true);
-  var emptyDiv = document.createElement('div')
+
+  var cloneById = function(id) {
+    return document.getElementById(id)
+      .cloneNode(true);
+  };
+
+  var appendToResponseHeaders = function(elements) {
+    var headers = document.getElementById('bin-response-headers');
+
+    elements.forEach(function(element) {
+      headers.appendChild(element);
+    });
+  };
+
+
+  var headerNameInput = cloneById('header-name-input'),
+    headerValueInput = cloneById('header-value-input'),
+    emptyDiv = document.createElement('div');
 
   emptyDiv.setAttribute('class', 'mdl-cell mdl-cell--4-col');
 
-  document.getElementById('bin-response-headers').appendChild(headerNameClone);
-  document.getElementById('bin-response-headers').appendChild(headerValueClone);
-  document.getElementById('bin-response-headers').appendChild(emptyDiv);}
+  appendToResponseHeaders([headerNameInput, headerValueInput, emptyDiv]);
+}
+

@@ -33,3 +33,7 @@ ul.raw-request {
 #response-header-inputs {
   display: inherit
 }
+
+#bin-response-body {
+  width: 100%
+}
