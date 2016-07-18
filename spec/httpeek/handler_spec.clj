@@ -114,6 +114,14 @@
             (should= {} (:headers (:response bin)))
             (should= "" (:body (:response bin))))))
 
+      (context "And a status and one header are specified for the response"
+        (it "creates a bin with the correct response attributes"
+          (let [response (create-bin-response "status=500&header-name[]=foo&header-value[]=bar&body=")
+                bin (->> (core/get-bins {:limit 50}) (sort-by :created-at) last)]
+            (should= 500 (:status (:response bin)))
+            (should= {:foo "bar"} (:headers (:response bin)))
+            (should= "" (:body (:response bin))))))
+
       (context "And a status and headers are specified for the response"
         (it "creates a bin with the correct response attributes"
           (let [response (create-bin-response "status=500&header-name[]=foo&header-value[]=bar&header-name[]=baz&header-value[]=buzz&body=")
@@ -140,23 +148,23 @@
     (context "When a bin creation attempt is unsuccessful"
       (context "and no status is specified in the response"
         (it "doesn't create the bin"
-          (let [response (create-bin-response "status=&header-name[]=[foo baz]&header-value[]=[bar buzz]&body=cash rules everything around me")
+          (let [response (create-bin-response "status=&header-name[]=foo&header-value[]=bar&header-name[]=baz&header-value[]=buzz&body=cash rules everything around me")
                 bin (->> (core/get-bins {:limit 50}) (sort-by :created-at) last)]
             (should-be-nil bin)))
 
         (it "returns a 400 status"
-          (let [response (create-bin-response "status=&header-name[]=[foo baz]&header-value[]=[bar buzz]&body=cash rules everything around me")
+          (let [response (create-bin-response "status=&header-name[]=foo&header-value[]=bar&header-name[]=baz&header-value[]=buzz&body=cash rules everything around me")
                 bin (->> (core/get-bins {:limit 50}) (sort-by :created-at) last)]
             (should= 400 (:status response)))))
 
       (context "and headers are not filled out properly"
         (it "doesn't create the bin"
-          (let [response (create-bin-response "status=600&header-name[]=[foo baz]&header-value[]=[bar]&body=cash rules everything around me")
+          (let [response (create-bin-response "status=600&header-name[]=foo&header-value[]=bar&header-name[]=baz&header-value[]=&body=cash rules everything around me")
                 bin (->> (core/get-bins {:limit 50}) (sort-by :created-at) last)]
             (should-be-nil bin)))
 
         (it "returns a 400 status"
-          (let [response (create-bin-response "status=600&header-name[]=[foo baz]&header-value[]=[bar]&body=cash rules everything around me")
+          (let [response (create-bin-response "status=600&header-name[]=foo&header-value[]=bar&header-name[]=baz&header-value[]=&body=cash rules everything around me")
                 bin (->> (core/get-bins {:limit 50}) (sort-by :created-at) last)]
             (should= 400 (:status response)))))))
 

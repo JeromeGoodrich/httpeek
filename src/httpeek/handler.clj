@@ -57,13 +57,18 @@
 (defn- validate-response-map [body]
   (s/validate response-map-skeleton body))
 
+(defn- str->vector [input]
+  (if (string? input)
+    (vector input)
+    input))
+
 (defn- create-headers [header-names header-values]
-  (if (= (count header-names) (count header-values))
-    (if (or (nil? header-names) (nil? header-values))
-      {}
+  (let [header-names (remove empty? (str->vector header-names))
+        header-values (remove empty? (str->vector header-values))]
+    (if (= (count header-names) (count header-values))
       (zipmap (map #(name %) header-names)
-              (map #(name %) header-values)))
-    nil))
+              (map #(name %) header-values))
+      nil)))
 
 (defn- create-bin-response [form-params]
   (let [status (edn/read-string(get form-params "status"))
