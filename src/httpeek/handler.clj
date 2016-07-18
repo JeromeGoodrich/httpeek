@@ -3,6 +3,7 @@
   (:require [ring.util.response :as response]
             [ring.middleware.session :as session]
             [ring.middleware.params :as params]
+            [ring.middleware.flash :as flash]
             [ring.middleware.json :as ring-json]
             [schema.core :as s]
             [clojure.edn :as edn]
@@ -62,9 +63,14 @@
     (vector input)
     input))
 
+(defn- normalize-headers [partial-header]
+  (->> partial-header
+    (str->vector)
+   (remove empty?)))
+
 (defn- create-headers [header-names header-values]
-  (let [header-names (remove empty? (str->vector header-names))
-        header-values (remove empty? (str->vector header-values))]
+  (let [header-names (normalize-headers header-names)
+        header-values (normalize-headers header-values)]
     (if (= (count header-names) (count header-values))
       (zipmap (map #(name %) header-names)
               (map #(name %) header-values))
@@ -90,7 +96,8 @@
         (-> (response/redirect (format "/bin/%s/inspect" bin-id))
           (assoc-in [:session] {:private-bins [bin-id]}))
         (response/redirect (format "/bin/%s/inspect" bin-id)))
-      {:status 400 :headers {} :body "Bad Request"})))
+      (-> (response/redirect "/")
+        (assoc :flash "Could not create the bin, input invalid")))))
 
 (defn- handle-web-delete-bin [id]
   (let [bin-id (str->uuid id)
@@ -145,7 +152,7 @@
     (route/not-found (handle-api-not-found "This resource could not be found"))))
 
 (defroutes web-routes
-  (GET "/" [] (views/index-page))
+  (GET "/" {flash :flash} (views/index-page flash))
   (POST "/bins" req (-> req
                       params/params-request
                       handle-web-create-bin))
@@ -160,4 +167,5 @@
             (wrap-routes ring-json/wrap-json-body {:keywords? true})
             (ring-json/wrap-json-response))
           (-> web-routes
+            (flash/wrap-flash)
             (session/wrap-session))))
