@@ -1,5 +1,6 @@
 (ns httpeek.core
-  (:require [httpeek.db :as db]))
+  (:require [httpeek.db :as db]
+            [cheshire.core :as json]))
 
 (defmacro with-error-handling [default form]
   `(try
@@ -7,9 +8,17 @@
      (catch Exception e#
        ~default)))
 
-(defn create-bin [private-bin? response]
+(def default-response
+  (json/encode {:status 200
+                :headers {}
+                :body "ok"}))
+
+(defn create-bin [{:keys [private response],
+                   :or {private false
+                        response default-response}}]
   (with-error-handling nil
-    (db/create-bin (:private private-bin?) response)))
+    (db/create-bin {:private private
+                    :response response})))
 
 (defn find-bin-by-id [id]
   (with-error-handling nil

@@ -13,7 +13,7 @@
   (context "/api"
     (context "GET /"
       (it "returns a json response of all existing bins"
-        (let [bin-id (core/create-bin {:private false} helper/bin-response)
+        (let [bin-id (core/create-bin {:private false :response helper/bin-response})
               response (app* (mock/request :get "/api/"))
               body (json/decode (:body response))]
           (should= 200 (:status response))
@@ -22,7 +22,7 @@
 
     (context "GET /bin/:id/inspect"
       (it "returns a json response for inspecting an existing bin"
-        (let [bin-id (core/create-bin {:private false} helper/bin-response)
+        (let [bin-id (core/create-bin {:private false :response helper/bin-response})
               request (core/add-request bin-id (json/encode (mock/request :get (format "/bin/%s" bin-id))))
               response (app* (mock/request :get (format "/api/bin/%s/inspect" bin-id)))
               body (json/decode (:body response))]
@@ -37,7 +37,7 @@
 
     (context "DELETE /bin/:id/delete"
       (it "returns a json response for deleting an existing bin"
-        (let [bin-id (core/create-bin {:private false} helper/bin-response)
+        (let [bin-id (core/create-bin {:private false :response helper/bin-response})
               response (app* (mock/request :delete (format "/api/bin/%s/delete" bin-id)))]
           (should= 200 (:status response))
           (should= "application/json; charset=utf-8" (get-in response [:headers "Content-Type"]))))
@@ -173,34 +173,34 @@
   (context  "GET /bin/:id/inspect"
     (context "getting an existing private bin with no requests"
       (it "returns a 200 status"
-        (let  [bin-id (core/create-bin {:private true} helper/bin-response)]
+        (let  [bin-id (core/create-bin {:private true :response helper/bin-response})]
           (let [response (web-routes (assoc (mock/request :get (format "/bin/%s/inspect" bin-id)) :session {:private-bins [bin-id]}))]
             (should= 200 (:status response))
             (should-contain "curl -X" (:body response))))))
 
     (context "getting an existing public bin with no requests"
       (it "returns a 200 status"
-        (let  [bin-id (core/create-bin {:private false} helper/bin-response)]
+        (let  [bin-id (core/create-bin {:private false :response helper/bin-response})]
           (let [response (web-routes (mock/request :get (format "/bin/%s/inspect" bin-id)))]
             (should= 200 (:status response))
             (should-contain "curl -X" (:body response))))))
 
     (context "attempting to access private bin from a different session"
       (it "returns a 403 status"
-        (let  [bin-id (core/create-bin {:private true} helper/bin-response)
+        (let  [bin-id (core/create-bin {:private true :response helper/bin-response})
                response (web-routes (mock/request :get (format "/bin/%s/inspect" bin-id)))]
           (should= 403 (:status response)))))
 
     (context "getting an existing private bin with request added"
       (it "returns a 200 status"
-        (let  [bin-id (core/create-bin {:private true} helper/bin-response)
+        (let  [bin-id (core/create-bin {:private true :response helper/bin-response})
                valid-request (web-routes (assoc (mock/request :get (format "/bin/%s" bin-id)) :protocol "HTTP/1.1"))
                response (web-routes (assoc (mock/request :get (format "/bin/%s/inspect" bin-id)) :session {:private-bins [bin-id]}))]
           (should= 200 (:status response)))))
 
     (context "getting an existing public bin with request added"
       (it "returns a 200 status"
-        (let  [bin-id (core/create-bin {:private false} helper/bin-response)
+        (let  [bin-id (core/create-bin {:private false :response helper/bin-response})
                valid-request (web-routes (assoc (mock/request :get (format "/bin/%s" bin-id)) :protocol "HTTP/1.1"))
                response (web-routes (mock/request :get (format "/bin/%s/inspect" bin-id)))]
           (should= 200 (:status response)))))
@@ -218,7 +218,7 @@
   (context "ANY /bin/:id"
     (context "GET request with existing bin"
       (it "returns the bin's set response"
-        (let [bin-id (core/create-bin {:private false} helper/bin-response)
+        (let [bin-id (core/create-bin {:private false :response helper/bin-response})
               response (app* (mock/request :get (format "/bin/%s" bin-id)))]
           (should= 500 (:status response))
           (should= {"foo" "bar"} (:headers response))
@@ -226,7 +226,7 @@
 
     (context "Other request with existing bin"
       (it "returns the bin's set response"
-        (let [bin-id (core/create-bin {:private false} helper/bin-response)
+        (let [bin-id (core/create-bin {:private false :response helper/bin-response})
               response (app* (mock/request :post (format "/bin/%s" bin-id)))]
           (should= 500 (:status response))
           (should= {"foo" "bar"} (:headers response))
@@ -245,7 +245,7 @@
  (context "DELETE /bin/:id/delete"
    (context "DELETE request to existing bin"
      (it "redirects to the index page"
-      (let [bin-id (core/create-bin {:private false} helper/bin-response)
+      (let [bin-id (core/create-bin {:private false :response helper/bin-response})
             response (app* (mock/request :post (str "/bin/" bin-id "/delete")))]
         (should= 302 (:status response)))))
 

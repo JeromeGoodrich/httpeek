@@ -91,7 +91,7 @@
   (let [form-params (:form-params req)
         private? (boolean (get form-params "private-bin"))
         bin-response (create-bin-response form-params)]
-    (if-let [bin-id (core/create-bin {:private private?} bin-response)]
+    (if-let [bin-id (core/create-bin {:private private? :response bin-response})]
       (if private?
         (-> (response/redirect (format "/bin/%s/inspect" bin-id))
           (assoc-in [:session] {:private-bins [bin-id]}))
@@ -121,7 +121,7 @@
 
 (defn- handle-api-create-bin [body {:strs [host] :as headers}]
   (if-let [response (response-config body)]
-    (let [bin-id (core/create-bin {:private false} (json/encode response))]
+    (let [bin-id (core/create-bin {:private false :response (json/encode response)})]
       (response/response {:bin-url (format "http://%s/bin/%s" host bin-id)
                           :inspect-url (format "http://%s/bin/%s/inspect" host bin-id)
                           :delete-url (format "http://%s/api/bin/%s/" host bin-id)}))
