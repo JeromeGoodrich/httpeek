@@ -28,7 +28,7 @@
                            "https://code.getmdl.io/1.1.3/material.light_blue-indigo.min.css"
                            "/css/main.css")
    (page/include-js "https://code.getmdl.io/1.1.3/material.min.js"
-                    "/js/views.js")])
+                    "/js/add_headers.js")])
 
 (def create-bin-form
   [:div.mdl-grid
@@ -47,7 +47,7 @@
         [:input#bin-response-header-value.mdl-textfield__input {:type "text" :name "header-value[]"}]
         [:label.mdl-textfield__label {:for "bin-response-header-value"} (h/h "Header Value")]]]
       [:div.mdl-cell.mdl-cell--4-col
-       [:button.mdl-button.mdl-js-button.mdl-button--primary {:type "button" :onclick "addHeaders()"} (h/h "Add Headers")]]]
+       [:button#add-headers-button.mdl-button.mdl-js-button.mdl-button--primary {:type "button"} (h/h "Add Headers")]]]
      [:div.mdl-grid.mdl-grid--nesting
       [:div.mdl-cell.mdl-cell--8-col
        [:div#bin-response-body.mdl-textfield.mdl-js-textfield
