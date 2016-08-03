@@ -1,11 +1,28 @@
 (ns httpeek.core-spec
   (:require [speclj.core :refer :all]
             [httpeek.core :refer :all]
+            [validateur.validation :as v]
             [cheshire.core :as json]
             [httpeek.spec-helper :as helper]))
 
 (describe "httpeek.core"
   (after (helper/reset-db))
+
+  (context "When validating a user-inputted response"
+    (context "And the response-map is well-formed"
+      (it "returns nil"
+        (should-be-nil (validate-response (json/decode default-response true)))))
+
+    (context "And the response-map is malformed"
+      (it "returns a map of errors when no status is nil or empty"
+        (let [status-nil-errors (validate-response {:status nil :headers {} :body ""})
+              status-empty-errors (validate-response {:status "" :headers {} :body ""})]
+          (should= #{"status can't be blank"} status-nil-errors)
+          (should= #{"status can't be blank"} status-empty-errors)))
+
+      (it "returns a map of errors when headers are nil"
+        (let [headers-nil-errors (validate-response {:status 200 :headers nil :body "ok"})]
+          (should= #{"headers must have header name and value"} headers-nil-errors)))))
 
   (context "When creating a bin"
     (context "And no options are specified"

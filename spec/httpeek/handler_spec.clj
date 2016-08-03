@@ -156,7 +156,7 @@
           (let [response (create-bin-response "status=&header-name[]=foo&header-value[]=bar&header-name[]=baz&header-value[]=buzz&body=cash rules everything around me")
                 bin (->> (core/get-bins {:limit 50}) (sort-by :created-at) last)]
             (should= 302 (:status response))
-            (should-contain "Could not create the bin, input invalid" (:flash response)))))
+            (should-contain "status can't be blank" (:flash response)))))
 
       (context "and headers are not filled out properly"
         (it "doesn't create the bin"
@@ -168,7 +168,7 @@
           (let [response (create-bin-response "status=600&header-name[]=foo&header-value[]=bar&header-name[]=baz&header-value[]=&body=cash rules everything around me")
                 bin (->> (core/get-bins {:limit 50}) (sort-by :created-at) last)]
             (should= 302 (:status response))
-            (should-contain "Could not create the bin, input invalid" (:flash response)))))))
+            (should-contain "headers must have header name and value" (:flash response)))))))
 
   (context  "GET /bin/:id/inspect"
     (context "getting an existing private bin with no requests"

@@ -5,7 +5,6 @@
             [ring.middleware.params :as params]
             [ring.middleware.flash :as flash]
             [ring.middleware.json :as ring-json]
-            [schema.core :as s]
             [clojure.edn :as edn]
             [clojure.walk :as walk]
             [compojure.route :as route]
@@ -50,14 +49,6 @@
     (add-request-to-bin bin-id body)
     (response/not-found (views/not-found-page))))
 
-(def response-map-skeleton
-  {(s/required-key :status) s/Int
-   (s/required-key :headers) {s/Str s/Str}
-   (s/optional-key :body) s/Str})
-
-(defn- validate-response-map [body]
-  (s/validate response-map-skeleton body))
-
 (defn- str->vector [input]
   (if (string? input)
     (vector input)
@@ -83,9 +74,11 @@
         body (get form-params "body")
         response-map {:status status
                       :headers headers
-                      :body body}]
-    (core/with-error-handling nil
-                              (json/encode (validate-response-map response-map)))))
+                      :body body}
+        errors (core/validate-response response-map)]
+    (if (empty? errors)
+      (json/encode response-map)
+      errors)))
 
 (defn- handle-web-create-bin [req]
   (let [form-params (:form-params req)
@@ -97,7 +90,7 @@
           (assoc-in [:session] {:private-bins [bin-id]}))
         (response/redirect (format "/bin/%s/inspect" bin-id)))
       (-> (response/redirect "/")
-        (assoc :flash "Could not create the bin, input invalid")))))
+        (assoc :flash bin-response)))))
 
 (defn- handle-web-delete-bin [id]
   (let [bin-id (str->uuid id)
@@ -115,9 +108,11 @@
   (response/not-found {:message message}))
 
 (defn- response-config [body]
-  (let [formatted-body (update body :headers walk/stringify-keys)]
-    (core/with-error-handling nil
-                            (validate-response-map formatted-body))))
+  (let [formatted-body (update body :headers walk/stringify-keys)
+        errors (core/validate-response formatted-body)]
+    (if (empty? errors)
+      formatted-body
+      nil)))
 
 (defn- handle-api-create-bin [body {:strs [host] :as headers}]
   (if-let [response (response-config body)]

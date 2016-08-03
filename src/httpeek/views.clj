@@ -66,7 +66,8 @@
    [:div.mdl-card__supporting-text (h/h "HTTPeek gives you a unique URL that will collect all requests made to it,
                                         and allow you to inspect those requests in a human friendly way.")]
    [:div.mdl-card__actions.mdl-card--border
-    [:p flash]
+    (for [message flash]
+      [:p message])
     create-bin-form]])
 
 (defn- list-bin-history []
