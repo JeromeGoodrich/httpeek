@@ -24,3 +24,16 @@
 ul.raw-request {
  list-style-type: none;
 }
+
+.mdl-grid .mdl-grid.mdl-grid--nesting {
+  padding: 0;
+  margin: 0 -8px;
+}
+
+#response-header-inputs {
+  display: inherit
+}
+
+#bin-response-body {
+  width: 100%
+}

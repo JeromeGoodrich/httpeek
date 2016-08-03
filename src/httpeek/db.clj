@@ -19,8 +19,8 @@
         "jsonb" (json/decode value true)
         :else value))))
 
-(defn create-bin [private-bin?]
-  (-> (j/query db (str "INSERT INTO bins VALUES(DEFAULT, '" private-bin? "', DEFAULT) returning id;"))
+(defn create-bin [{:keys [private response] :as bin-options}]
+  (-> (j/query db (str "INSERT INTO bins VALUES(DEFAULT, '" private "', '" response "', DEFAULT) returning id;"))
     first
     :id))
 

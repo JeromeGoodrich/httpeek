@@ -2,8 +2,11 @@
   (:use compojure.core)
   (:require [ring.util.response :as response]
             [ring.middleware.session :as session]
+            [ring.middleware.params :as params]
+            [ring.middleware.flash :as flash]
             [ring.middleware.json :as ring-json]
-            [clojure.data.xml :as xml]
+            [clojure.edn :as edn]
+            [clojure.walk :as walk]
             [compojure.route :as route]
             [httpeek.core :as core]
             [cheshire.core :as json]
@@ -17,7 +20,6 @@
   (let [requested-bin (core/find-bin-by-id id)
         private? (:private requested-bin)
         permitted? (some #{id} (:private-bins session))]
-
     (if requested-bin
       (if (and private? (not permitted?))
         (response/status (response/response "private bin") 403)
@@ -39,26 +41,62 @@
 
 (defn- add-request-to-bin [id request-body]
   (core/add-request id request-body)
-  (response/response "ok"))
+  (let [response (:response (core/find-bin-by-id id))]
+    (update response :headers walk/stringify-keys)))
 
 (defn- route-request-to-bin [{:keys [requested-bin body] :as parsed-request}]
   (if-let [bin-id (:id requested-bin)]
     (add-request-to-bin bin-id body)
     (response/not-found (views/not-found-page))))
 
-(defn- handle-web-create-bin [form-params]
-  (let [private? (boolean (get form-params "private-bin?"))
-        bin-id (core/create-bin {:private private?})]
-    (if private?
-      (-> (response/redirect (format "/bin/%s/inspect" bin-id))
-        (assoc-in [:session] {:private-bins [bin-id]}))
-      (response/redirect (format "/bin/%s/inspect" bin-id)))))
+(defn- str->vector [input]
+  (if (string? input)
+    (vector input)
+    input))
+
+(defn- normalize-headers [partial-header]
+  (->> partial-header
+    (str->vector)
+   (remove empty?)))
+
+(defn- create-headers [header-names header-values]
+  (let [header-names (normalize-headers header-names)
+        header-values (normalize-headers header-values)]
+    (if (= (count header-names) (count header-values))
+      (zipmap (map #(name %) header-names)
+              (map #(name %) header-values))
+      nil)))
+
+(defn- create-bin-response [form-params]
+  (let [status (edn/read-string(get form-params "status"))
+        headers (create-headers (get form-params "header-name[]")
+                                (get form-params "header-value[]"))
+        body (get form-params "body")
+        response-map {:status status
+                      :headers headers
+                      :body body}
+        errors (core/validate-response response-map)]
+    (if (empty? errors)
+      (json/encode response-map)
+      errors)))
+
+(defn- handle-web-create-bin [req]
+  (let [form-params (:form-params req)
+        private? (boolean (get form-params "private-bin"))
+        bin-response (create-bin-response form-params)]
+    (if-let [bin-id (core/create-bin {:private private? :response bin-response})]
+      (if private?
+        (-> (response/redirect (format "/bin/%s/inspect" bin-id))
+          (assoc-in [:session] {:private-bins [bin-id]}))
+        (response/redirect (format "/bin/%s/inspect" bin-id)))
+      (-> (response/redirect "/")
+        (assoc :flash bin-response)))))
 
 (defn- handle-web-delete-bin [id]
   (let [bin-id (str->uuid id)
         delete-count (core/delete-bin bin-id)]
     (if (< 0 delete-count)
-      (response/redirect "/" 302)
+      (response/redirect "/")
       (response/not-found (views/not-found-page)))))
 
 (defn- handle-web-request-to-bin [request]
@@ -69,16 +107,20 @@
 (defn- handle-api-not-found [message]
   (response/not-found {:message message}))
 
-(defn- handle-api-get-bin [id]
-  (if-let [bin-id (core/find-bin-by-id (str->uuid id))]
-    (response/response {:bin-details bin-id})
-    (handle-api-not-found (format "The bin %s does not exist" id))))
+(defn- response-config [body]
+  (let [formatted-body (update body :headers walk/stringify-keys)
+        errors (core/validate-response formatted-body)]
+    (if (empty? errors)
+      formatted-body
+      nil)))
 
-(defn- handle-api-create-bin [{:strs [host] :as headers}]
-  (let [bin-id (core/create-bin {:private false})]
-    (response/response {:bin-url (format "http://%s/bin/%s" host bin-id)
-                        :inspect-url (format "http://%s/bin/%s/inspect" host bin-id)
-                        :delete-url (format "http://%s/bin/%s/delete" host bin-id)})))
+(defn- handle-api-create-bin [body {:strs [host] :as headers}]
+  (if-let [response (response-config body)]
+    (let [bin-id (core/create-bin {:private false :response (json/encode response)})]
+      (response/response {:bin-url (format "http://%s/bin/%s" host bin-id)
+                          :inspect-url (format "http://%s/bin/%s/inspect" host bin-id)
+                          :delete-url (format "http://%s/api/bin/%s/" host bin-id)}))
+    {:status 400 :headers {} :body "Bad Request"}))
 
 (defn- handle-api-delete-bin [id]
   (let [bin-id (str->uuid id)
@@ -101,13 +143,14 @@
     (GET "/" [] (handle-api-bin-index))
     (GET "/bin/:id/inspect" [id] (handle-api-inspect-bin id))
     (DELETE "/bin/:id/delete" [id] (handle-api-delete-bin id))
-    (POST "/bins" {headers :headers} (handle-api-create-bin headers))
-    (GET "/bin/:id" [id] (handle-api-get-bin id))
+    (POST "/bins" {body :body headers :headers} (handle-api-create-bin body headers))
     (route/not-found (handle-api-not-found "This resource could not be found"))))
 
 (defroutes web-routes
-  (GET "/" [] (views/index-page))
-  (POST "/bins" {form-params :form-params} (handle-web-create-bin form-params))
+  (GET "/" {flash :flash} (views/index-page flash))
+  (POST "/bins" req (-> req
+                      params/params-request
+                      handle-web-create-bin))
   (GET "/bin/:id/inspect" [id :as {session :session headers :headers}] (handle-web-inspect-bin (str->uuid id) session headers))
   (ANY "/bin/:id" req (handle-web-request-to-bin req))
   (POST "/bin/:id/delete" [id] (handle-web-delete-bin id))
@@ -116,6 +159,8 @@
 
 (def app*
   (routes (-> api-routes
+            (wrap-routes ring-json/wrap-json-body {:keywords? true})
             (ring-json/wrap-json-response))
           (-> web-routes
+            (flash/wrap-flash)
             (session/wrap-session))))
