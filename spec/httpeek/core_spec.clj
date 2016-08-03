@@ -1,7 +1,6 @@
 (ns httpeek.core-spec
   (:require [speclj.core :refer :all]
             [httpeek.core :refer :all]
-            [validateur.validation :as v]
             [cheshire.core :as json]
             [httpeek.spec-helper :as helper]))
 
