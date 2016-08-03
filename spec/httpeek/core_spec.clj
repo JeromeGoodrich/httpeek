@@ -7,6 +7,14 @@
 (describe "httpeek.core"
   (after (helper/reset-db))
 
+  (context "When validating user-inputted expiration time"
+    (context "And the expiration time is less than 1 or greater than 24 hours"
+      (it "returns a map of errors"
+       (let [less-than-time-range-error (validate-expiration {:time-to-expiration 0})
+             greater-than-time-range-error (validate-expiration {:time-to-expiration 50})]
+         (should= #{"expiration time must be an integer between 1 and 24"} less-than-time-range-error)
+         (should= #{"expiration time must be an integer between 1 and 24"} greater-than-time-range-error)))))
+
   (context "When validating a user-inputted response"
     (context "And the response-map is well-formed"
       (it "returns nil"
