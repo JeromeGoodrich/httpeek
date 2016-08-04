@@ -51,4 +51,3 @@
   (first (j/with-db-transaction [db db]
                          (j/delete! db :requests ["bin_id = ?" bin-id])
                          (j/delete! db :bins ["id = ?" bin-id]))))
-
