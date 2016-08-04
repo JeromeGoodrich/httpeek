@@ -67,6 +67,8 @@
               (map #(name %) header-values))
       nil)))
 
+(def errors (atom #{}))
+
 (defn- create-bin-response [form-params]
   (let [status (edn/read-string(get form-params "status"))
         headers (create-headers (get form-params "header-name[]")
@@ -75,22 +77,32 @@
         response-map {:status status
                       :headers headers
                       :body body}
-        errors (core/validate-response response-map)]
-    (if (empty? errors)
+        response-errors (core/validate-response response-map)]
+    (if (empty? response-errors)
       (json/encode response-map)
-      errors)))
+      (swap! errors clojure.set/union response-errors))))
+
+(defn- get-time-till-exp [hours]
+  (if-let [hours-till-exp (edn/read-string hours)]
+    (let [exp-error (core/validate-expiration {:time-to-expiration hours-till-exp})]
+      (if (empty? exp-error)
+        hours-till-exp
+        (swap! errors clojure.set/union exp-error)))
+    24))
 
 (defn- handle-web-create-bin [req]
   (let [form-params (:form-params req)
+        time-till-exp (get-time-till-exp (get form-params "expiration"))
         private? (boolean (get form-params "private-bin"))
         bin-response (create-bin-response form-params)]
-    (if-let [bin-id (core/create-bin {:private private? :response bin-response})]
+    (if-let [bin-id (core/create-bin {:private private? :response bin-response :time-to-expiration time-till-exp})]
       (if private?
         (-> (response/redirect (format "/bin/%s/inspect" bin-id))
           (assoc-in [:session] {:private-bins [bin-id]}))
         (response/redirect (format "/bin/%s/inspect" bin-id)))
       (-> (response/redirect "/")
-        (assoc :flash bin-response)))))
+        (assoc :flash @errors)
+        (assoc :form-params form-params)))))
 
 (defn- handle-web-delete-bin [id]
   (let [bin-id (str->uuid id)
