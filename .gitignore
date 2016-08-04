@@ -10,4 +10,5 @@ pom.xml
 .lein-plugins
 .lein-repl-history
 .lein-env
+.nrepl-port
 /dev-resources
