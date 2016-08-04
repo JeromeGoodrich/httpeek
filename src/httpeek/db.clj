@@ -20,7 +20,7 @@
         :else value))))
 
 (defn create-bin [{:keys [private response expiration] :as bin-options}]
-  (-> (j/query db (str "INSERT INTO bins VALUES(DEFAULT, '" private "', '" response "', '" expiration "', DEFAULT) returning id;"))
+  (-> (j/query db (str "INSERT INTO bins VALUES(DEFAULT, '" private "', '" response "', '" expiration "') returning id;"))
     first
     :id))
 
@@ -51,3 +51,4 @@
   (first (j/with-db-transaction [db db]
                          (j/delete! db :requests ["bin_id = ?" bin-id])
                          (j/delete! db :bins ["id = ?" bin-id]))))
+

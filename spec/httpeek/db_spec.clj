@@ -3,6 +3,7 @@
            [httpeek.db :refer :all]
            [httpeek.spec-helper :as helper]
            [clj-time.core :as t]
+           [clj-time.coerce :as ct]
            [cheshire.core :as json]))
 
 (describe "httpeek.db"
@@ -44,13 +45,16 @@
 
   (context "When finding a bin"
     (it "finds a public bin with a custom response"
-      (let [bin-id (create-bin {:private false
+      (let [expiration (t/from-now (t/hours 7))
+            bin-id (create-bin {:private false
                                 :response  helper/bin-response
-                                :expiration (t/from-now (t/hours 24))})]
+                                :expiration expiration})]
         (should= bin-id (:id (find-bin-by-id bin-id)))
         (should= 500 (:status (:response (find-bin-by-id bin-id))))
         (should= {:foo "bar"} (:headers (:response (find-bin-by-id bin-id))))
-        (should= "hello world" (:body (:response (find-bin-by-id bin-id))))))
+        (should= "hello world" (:body (:response (find-bin-by-id bin-id))))
+        (should= (ct/to-string expiration)
+                 (ct/to-string (ct/from-sql-time (:expiration (find-bin-by-id bin-id)))))))
 
     (it "finds a private bin"
       (let [bin-id (create-bin {:private true
