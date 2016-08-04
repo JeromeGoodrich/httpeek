@@ -17,7 +17,7 @@
                                        :gte 1
                                        :lte 24
                                        :message-fn (fn [type _ _ & args]
-                                                     (if (or (= :gte type) (= :lte type) (= :only-integer type))
+                                                     (if (some #{type} [:gte :lte :only-integer])
                                                        "expiration time must be an integer between 1 and 24"))))]
     (v/errors :time-to-expiration (validator time-to-expiration))))
 
