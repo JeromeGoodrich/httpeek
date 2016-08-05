@@ -12,6 +12,7 @@
                            [migratus "0.8.25"]
                            [environ "1.0.3"]
                            [speclj "3.3.1"]
+                           [clojurewerkz/quartzite "2.0.0"]
                            [cheshire "5.6.2"]
                            [com.novemberain/validateur "2.5.0"]
                            [org.clojure/data.xml "0.0.8"]
