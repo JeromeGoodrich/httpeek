@@ -9,6 +9,26 @@
 (describe "httpeek.db"
   (after (helper/reset-db))
 
+  (context "When deleting expired bins"
+    (it "deletes the bins"
+      (let [bin-id (create-bin {:private false
+                           :response helper/bin-response
+                           :expiration (t/ago (t/hours 24))})]
+        (should-not-be-nil (find-bin-by-id bin-id))
+        (delete-expired-bins)
+        (should-be-nil (find-bin-by-id bin-id))))
+
+    (it "only deletes expired bins"
+      (let [expired-bin-id (create-bin {:private false
+                           :response helper/bin-response
+                           :expiration (t/ago (t/hours 24))})
+            unexpired-bin-id (create-bin {:private false
+                                          :response helper/bin-response
+                                          :expiration (t/from-now (t/hours 16))})]
+        (delete-expired-bins)
+        (should= unexpired-bin-id (:id (find-bin-by-id unexpired-bin-id)))
+        (should-be-nil (find-bin-by-id expired-bin-id)))))
+
   (context "When retrieving bins"
     (it "gets a specified number of bins"
       (let [bins (repeatedly 50 #(create-bin {:private false
