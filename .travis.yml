@@ -1,0 +1,7 @@
+language: clojure
+services:
+  - postgresql
+before_script:
+  - psql -c 'create database httpeek_spec;' -U postgres
+
+script: lein with-profile test spec
