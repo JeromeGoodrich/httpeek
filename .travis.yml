@@ -1,6 +1,8 @@
 language: clojure
 services:
   - postgresql
+addons:
+  postgresql: "9.4"
 before_script:
   - ./bin/create_db.sh
 
