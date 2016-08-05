@@ -1,6 +1,7 @@
 (ns httpeek.core
   (:require [httpeek.db :as db]
             [validateur.validation :as v]
+            [clj-time.core :as t]
             [cheshire.core :as json]))
 
 (defmacro with-error-handling [default form]
@@ -8,6 +9,17 @@
      ~form
      (catch Exception e#
        ~default)))
+
+(defn validate-expiration [time-to-expiration]
+  (let [validator (v/validation-set
+                    (v/numericality-of :time-to-expiration
+                                       :only-integer true
+                                       :gte 1
+                                       :lte 24
+                                       :message-fn (fn [type _ _ & args]
+                                                     (if (some #{type} [:gte :lte :only-integer])
+                                                       "expiration time must be an integer between 1 and 24"))))]
+    (v/errors :time-to-expiration (validator time-to-expiration))))
 
 (defn- format-errors [errors-map]
   (let [status-errors (v/errors :status errors-map)
@@ -27,12 +39,14 @@
                 :headers {}
                 :body "ok"}))
 
-(defn create-bin [{:keys [private response],
+(defn create-bin [{:keys [private response time-to-expiration],
                    :or {private false
-                        response default-response}}]
+                        response default-response
+                        time-to-expiration 24}}]
   (with-error-handling nil
     (db/create-bin {:private private
-                    :response response})))
+                    :response response
+                    :expiration (t/from-now (t/hours time-to-expiration))})))
 
 (defn find-bin-by-id [id]
   (with-error-handling nil

@@ -54,6 +54,11 @@
         [:textarea#bin-response-body.mdl-textfield__input {:type "text" :name "body"}]
         [:label.mdl-textfield__label {:for "bin-response-body"} (h/h "Body")]]]]
      [:div.mdl-grid.mdl-grid--nesting
+      [:div.mdl-cell.mdl-cell--4-col
+       [:div#bin-response-body.mdl-textfield.mdl-js-textfield
+        [:input#expiration.mdl-textfield__input {:type "text" :name "expiration"}]
+        [:label.mdl-textfield__label {:for "expiration"} (h/h "Hours Until Expiration")]]]]
+     [:div.mdl-grid.mdl-grid--nesting
       [:div.mdl-cell.mdl-cell--6-col
        [:button.mdl-button.mdl-js-button.mdl-button--primary {:type "submit"} (h/h "Create Bin")
         [:i.material-icons (h/h "add")]]

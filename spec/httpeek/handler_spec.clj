@@ -3,6 +3,8 @@
             [httpeek.handler :refer :all]
             [ring.mock.request :as mock]
             [httpeek.spec-helper :as helper]
+            [clj-time.core :as t]
+            [clj-time.coerce :as ct]
             [ring.util.io :as r-io]
             [cheshire.core :as json]
             [httpeek.core :as core]))
@@ -106,6 +108,14 @@
         app*))
 
     (context "When a bin is successfully created"
+      (context "And an expiration time is specified"
+        (it "create a bin with the expected expiration time"
+          (let [response (create-bin-response "status=200&header-name[]=&header-value[]=&body=&expiration=7")
+                bin (->> (core/get-bins {:limit 50}) (sort-by :created-at) last)
+                before (t/minus (t/from-now (t/hours 7)) (t/seconds 1))
+                after (t/plus (t/from-now (t/hours 7)) (t/seconds 1))]
+            (should (t/within? before after (ct/from-sql-time (:expiration bin)))))))
+
       (context "And only a status is specified for the response"
         (it "creates a bin with the correct response attributes"
           (let [response (create-bin-response "status=500&header-name[]=&header-value[]=&body=")
@@ -146,13 +156,25 @@
             (should= (format "/bin/%s/inspect" (:id bin)) (get-in response [:headers "Location"]))))))
 
     (context "When a bin creation attempt is unsuccessful"
+      (context "And an invalid expiration date is entered"
+        (it "doesn't create the bin"
+          (let [response (create-bin-response "status=200&header-name[]=foo&header-value[]=bar&header-name[]=baz&header-value[]=buzz&body=cash rules everything around me&expiration=25")
+                bin (->> (core/get-bins {:limit 50}) (sort-by :created-at) last)]
+            (should-be-nil bin)))
+
+        (it "it redirects to the form's page with an error message"
+          (let [response (create-bin-response "status=200&header-name[]=foo&header-value[]=bar&header-name[]=baz&header-value[]=buzz&body=cash rules everything around me&expiration=25")
+                bin (->> (core/get-bins {:limit 50}) (sort-by :created-at) last)]
+            (should= 302 (:status response))
+            (should-contain "expiration time must be an integer between 1 and 24" (:flash response)))))
+
       (context "and no status is specified in the response"
         (it "doesn't create the bin"
           (let [response (create-bin-response "status=&header-name[]=foo&header-value[]=bar&header-name[]=baz&header-value[]=buzz&body=cash rules everything around me")
                 bin (->> (core/get-bins {:limit 50}) (sort-by :created-at) last)]
             (should-be-nil bin)))
 
-        (it "returns a 400 status"
+        (it "redirects to the form's page with an error message"
           (let [response (create-bin-response "status=&header-name[]=foo&header-value[]=bar&header-name[]=baz&header-value[]=buzz&body=cash rules everything around me")
                 bin (->> (core/get-bins {:limit 50}) (sort-by :created-at) last)]
             (should= 302 (:status response))
@@ -164,7 +186,7 @@
                 bin (->> (core/get-bins {:limit 50}) (sort-by :created-at) last)]
             (should-be-nil bin)))
 
-        (it "returns a 400 status"
+        (it "redirects to the form's page with an error message"
           (let [response (create-bin-response "status=600&header-name[]=foo&header-value[]=bar&header-name[]=baz&header-value[]=&body=cash rules everything around me")
                 bin (->> (core/get-bins {:limit 50}) (sort-by :created-at) last)]
             (should= 302 (:status response))

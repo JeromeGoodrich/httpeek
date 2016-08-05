@@ -19,13 +19,16 @@
         "jsonb" (json/decode value true)
         :else value))))
 
-(defn create-bin [{:keys [private response] :as bin-options}]
-  (-> (j/query db (str "INSERT INTO bins VALUES(DEFAULT, '" private "', '" response "', DEFAULT) returning id;"))
+(defn delete-expired-bins []
+  (j/delete! db :bins ["expiration < now()"]))
+
+(defn create-bin [{:keys [private response expiration] :as bin-options}]
+  (-> (j/query db (str "INSERT INTO bins VALUES(DEFAULT, '" private "', '" response "', '" expiration "') returning id;"))
     first
     :id))
 
 (defn get-bins [limit]
-  (j/query db (str "SELECT * FROM bins LIMIT " limit ";")))
+  (j/query db (str "SELECT * FROM bins WHERE expiration > now() LIMIT " limit ";")))
 
 (defn all-requests []
   (j/query db
