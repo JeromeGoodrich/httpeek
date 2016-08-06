@@ -3,7 +3,7 @@
             [httpeek.handler :refer [app*]])
 (:import [httpeek.jobs DeleteExpired]))
 
-(defn -main [_]
+(defn -main [& args]
   (let [trigger (jobs/configure-trigger {:trigger-key "trigger.ms"
                                          :schedule jobs/sched-once-every-200-ms})
         job (jobs/build-job {:job-type DeleteExpired :job-key "test"})]
