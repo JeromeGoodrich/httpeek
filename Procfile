@@ -1,2 +1,2 @@
-web: lein ring server
+web: lein ring server-headless $PORT
 worker: lein delete-expired
