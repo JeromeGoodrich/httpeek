@@ -69,8 +69,8 @@
         (should= (- (count bins) 25)
                  (count (get-bins {:limit 50})))))
 
-    (it "returns 0 for an invalid limit"
-      (should= 0 (get-bins {:limit "not-a-limit"}))))
+    (it "returns [] for an invalid limit"
+      (should= [] (get-bins {:limit "not-a-limit"}))))
 
   (context "When retrieving a single bin"
     (context "And the bin exists"

@@ -61,7 +61,7 @@
     (db/add-request bin-id full-json-request)))
 
 (defn get-bins [limit]
-  (with-error-handling 0
+  (with-error-handling []
     (db/get-bins (:limit limit))))
 
 (defn all-requests []

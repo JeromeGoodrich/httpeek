@@ -1,7 +1,6 @@
 (ns httpeek.main
-  (:require [httpeek.jobs :as jobs]
-            [httpeek.handler :refer [app*]])
-(:import [httpeek.jobs DeleteExpired]))
+  (:require [httpeek.jobs :as jobs])
+  (:import [httpeek.jobs DeleteExpired]))
 
 (defn -main [& args]
   (let [trigger (jobs/configure-trigger {:trigger-key "trigger.ms"
