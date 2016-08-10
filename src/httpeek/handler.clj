@@ -70,7 +70,7 @@
 (def errors (atom #{}))
 
 (defn- create-bin-response [form-params]
-  (let [status (edn/read-string(get form-params "status"))
+  (let [status (edn/read-string (get form-params "status"))
         headers (create-headers (get form-params "header-name[]")
                                 (get form-params "header-value[]"))
         body (get form-params "body")
@@ -90,19 +90,29 @@
         (swap! errors clojure.set/union exp-error)))
     24))
 
+(defn- private-bin-response [bin-id]
+  (-> (response/redirect (format "/bin/%s/inspect" bin-id))
+    (assoc-in [:session] {:private-bins [bin-id]})))
+
+(defn- public-bin-response [bin-id]
+  (response/redirect (format "/bin/%s/inspect" bin-id)))
+
+(defn- user-error-response []
+      (-> (response/redirect "/")
+        (assoc :flash @errors)))
+
 (defn- handle-web-create-bin [req]
   (let [form-params (:form-params req)
         time-till-exp (get-time-till-exp (get form-params "expiration"))
         private? (boolean (get form-params "private-bin"))
         bin-response (create-bin-response form-params)]
-    (if-let [bin-id (core/create-bin {:private private? :response bin-response :time-to-expiration time-till-exp})]
+    (if-let [bin-id (core/create-bin {:private private?
+                                      :response bin-response
+                                      :time-to-expiration time-till-exp})]
       (if private?
-        (-> (response/redirect (format "/bin/%s/inspect" bin-id))
-          (assoc-in [:session] {:private-bins [bin-id]}))
-        (response/redirect (format "/bin/%s/inspect" bin-id)))
-      (-> (response/redirect "/")
-        (assoc :flash @errors)
-        (assoc :form-params form-params)))))
+        (private-bin-response bin-id)
+        (public-bin-response bin-id))
+      (user-error-response))))
 
 (defn- handle-web-delete-bin [id]
   (let [bin-id (str->uuid id)
@@ -163,7 +173,8 @@
   (POST "/bins" req (-> req
                       params/params-request
                       handle-web-create-bin))
-  (GET "/bin/:id/inspect" [id :as {session :session headers :headers}] (handle-web-inspect-bin (str->uuid id) session headers))
+  (GET "/bin/:id/inspect" [id :as {session :session headers :headers}] (handle-web-inspect-bin
+                                                                         (str->uuid id) session headers))
   (ANY "/bin/:id" req (handle-web-request-to-bin req))
   (POST "/bin/:id/delete" [id] (handle-web-delete-bin id))
   (route/resources "/")

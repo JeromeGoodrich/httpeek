@@ -13,4 +13,3 @@
       (let [formatted-xml (format-xml "not-an-xml-string")]
         (should= "Malformed XML in the request body"
                  formatted-xml)))))
-

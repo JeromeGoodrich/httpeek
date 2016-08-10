@@ -10,5 +10,3 @@
 (defn format-json [json-string]
   (core/with-error-handling "Malformed JSON in the request body"
                             (beautify-json json-string)))
-
-

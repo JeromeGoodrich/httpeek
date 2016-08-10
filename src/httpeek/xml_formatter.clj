@@ -23,5 +23,3 @@
 (defn format-xml [xml-string]
   (core/with-error-handling "Malformed XML in the request body"
                             (ppxml xml-string)))
-
-

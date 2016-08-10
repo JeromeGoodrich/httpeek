@@ -31,8 +31,7 @@
   (j/query db (str "SELECT * FROM bins WHERE expiration > now() LIMIT " limit ";")))
 
 (defn all-requests []
-  (j/query db
-    ["SELECT * FROM requests;"]))
+  (j/query db ["SELECT * FROM requests;"]))
 
 (defn add-request [bin-id full-request]
   (-> (j/query db (str "INSERT INTO requests(full_request, bin_id) VALUES('" full-request "', '" bin-id "') returning id;"))

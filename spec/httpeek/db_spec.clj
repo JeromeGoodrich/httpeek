@@ -25,7 +25,9 @@
             unexpired-bin-id (create-bin {:private false
                                           :response helper/bin-response
                                           :expiration (t/from-now (t/hours 16))})]
+
         (delete-expired-bins)
+
         (should= unexpired-bin-id (:id (find-bin-by-id unexpired-bin-id)))
         (should-be-nil (find-bin-by-id expired-bin-id)))))
 
@@ -64,7 +66,7 @@
                  (count (get-bins 50))))))
 
   (context "When finding a bin"
-    (it "finds a public bin with a custom response"
+    (it "finds a public bin with a user specified response and expiration time"
       (let [expiration (t/from-now (t/hours 7))
             bin-id (create-bin {:private false
                                 :response  helper/bin-response
@@ -143,6 +145,8 @@
                                 :expiration (t/from-now (t/hours 24))})
             first-request-id (add-request bin-id (json/encode {:position "first"}))
             second-request-id (add-request bin-id (json/encode {:position "second"}))]
+
         (delete-bin bin-id)
+
         (should-be-nil (find-request-by-id first-request-id))
         (should-be-nil (find-request-by-id second-request-id))))))
