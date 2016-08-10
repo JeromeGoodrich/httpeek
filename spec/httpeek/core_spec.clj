@@ -13,6 +13,13 @@
        (let [less-than-time-range-error (validate-expiration {:time-to-expiration 0})
              greater-than-time-range-error (validate-expiration {:time-to-expiration 50})]
          (should= #{"expiration time must be an integer between 1 and 24"} less-than-time-range-error)
+         (should= #{"expiration time must be an integer between 1 and 24"} greater-than-time-range-error))))
+
+    (context "And the expiration time is not an integer"
+      (it "returns a map of errors"
+       (let [less-than-time-range-error (validate-expiration {:time-to-expiration 4.5})
+             greater-than-time-range-error (validate-expiration {:time-to-expiration "foo"})]
+         (should= #{"expiration time must be an integer between 1 and 24"} less-than-time-range-error)
          (should= #{"expiration time must be an integer between 1 and 24"} greater-than-time-range-error)))))
 
   (context "When validating a user-inputted response"
@@ -21,7 +28,7 @@
         (should-be-nil (validate-response (json/decode default-response true)))))
 
     (context "And the response-map is malformed"
-      (it "returns a map of errors when no status is nil or empty"
+      (it "returns a map of errors when status is nil or empty"
         (let [status-nil-errors (validate-response {:status nil :headers {} :body ""})
               status-empty-errors (validate-response {:status "" :headers {} :body ""})]
           (should= #{"status can't be blank"} status-nil-errors)
@@ -61,7 +68,6 @@
           (should-be-nil malformed-bin)
           (should-be-nil another-malformed-bin)))))
 
-
   (context "When retreiving multiple bins"
     (it "retrieves a limited amount of bins"
       (let [bins (repeatedly 75 #(create-bin {:private false
@@ -69,7 +75,7 @@
         (should= (- (count bins) 25)
                  (count (get-bins {:limit 50})))))
 
-    (it "returns [] for an invalid limit"
+    (it "returns an empty vector for an invalid limit"
       (should= [] (get-bins {:limit "not-a-limit"}))))
 
   (context "When retrieving a single bin"
