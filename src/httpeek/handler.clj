@@ -70,9 +70,6 @@
 (def errors (atom #{}))
 
 (defn- create-bin-response [form-params]
-  (prn "*********form-params************************")
-  (prn form-params)
-  (prn "********************************")
   (let [status (edn/read-string (get form-params "status"))
         headers (create-headers (get form-params "header-name[]")
                                 (get form-params "header-value[]"))
@@ -109,11 +106,6 @@
         time-till-exp (get-time-till-exp (get form-params "expiration"))
         private? (boolean (get form-params "private-bin"))
         bin-response (create-bin-response form-params)]
-  (prn "*********bin-creation************************")
-  (prn (core/create-bin {:private private?
-                         :response bin-response
-                         :time-to-expiration time-till-exp}))
-  (prn "********************************")
     (if-let [bin-id (core/create-bin {:private private?
                                       :response bin-response
                                       :time-to-expiration time-till-exp})]

@@ -1,9 +1,16 @@
 language: clojure
 services:
-  - postgresql
+- postgresql
 addons:
-  postgresql: "9.4"
+  postgresql: '9.4'
 before_script:
-  - ./bin/create_db.sh
-
+- "./bin/create_db.sh"
 script: lein with-profile test spec
+deploy:
+  provider: heroku
+  api_key:
+    secure: Fxr3qt6I1WHm43Z8worTcUHHgHPhzdKJmnubb0LDf40iXj7pUcFLKjE8uWZj5vwkCgZ1xUjxmff3k4jb6oSQweHUJkbINauClt8vQMMu2RTJ3qpEWl95A/sxMRqNAq7swCHzHFpXUY3G67syXgalsj1fpyUAupeIJ2HQSwm9Bf4oHEvXasqrb0KzuPx0aaSQCC4y7cWedoj8ZqP/UcMZAEhxiUy8fg3LOX4PZ0fW4rtL3V2DzirvxiJOfjwNYYx6DMRztLfA8BepeP7N9R6aPxY0sGt+vbMsitBPXk6QqnVAHIlLIkOUXAwqDInML0aBiVVAONJ6hGa7UkkkspM2r9tOX/WP7wfOqnfvn/GEhU56JxDEMHZBtXFTn1fnSGjHSNm/mr9CM4jobr51hE5JyuW8eb/8XGcmJaDsGe2XRDiAYXI4piVh2rB0zuRSCiWOGHi0JpkgDPDWiHfRUv9GaYPutNhy2Pb1cxErUqQMFXIf5y9ePDbQQUXmUVkpnJJDgKRBa2Yr8wsFzr+08t/JZeowHcJ5cyVHBRe41HKMzuRrQgqryACaMax+3AXuUe/z/75hECAaQRH3s5W+BejmoZZvCKeTd305BZKtg+IvcYCMHC+e3Lra4AIMbkxHPS6yB4ZTyLU6WyaQsMFg+2wYfQgBLnCCGSTPLudpyaer9HY=
+  on: heroku-testing
+  run: "lein migrate"
+  app:
+    staging: fast-depths-82767
