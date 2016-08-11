@@ -5,23 +5,22 @@ and then allows you to see those requests in a friendly UI and return customizab
 
 ## Installation
 
-Clone the repo
+Clone the repo:
+
+
 `git clone http://github.com/Jgoodrich07/httpeek`
 
-You will need to have Leinegen installed.
+
+(You will need to have Leinegen installed)
 
 ###Setting up the database
 
-just run this `bin/create_db.sh`
-Once your databases are set-up you can  migrate them using the following commands
+run `bin/create_db.sh`. The script will create the databases and run the necessary migrations
 
-For the test db: `lein with-profile test migrate`
-For the dev db: `lein migrate`
+If for some reason you need to rollback the migrations, use `lein rollback`.
 
-In order to rollback the migrations it's the same command but `rollback` instead of migrate
+###Running HTTPeek
 
-#Running HTTPeek
-
-To run the server: `lein ring server` Server is configured to auto-reload
-To run the specs: `lein with-profile test spec -a`
-
+- To run the server: `lein ring server` Server is configured to auto-reload
+- To run the specs: `lein with-profile test spec -a`
+- To run the the job cleans up expired bins: `lein delete-expired`
