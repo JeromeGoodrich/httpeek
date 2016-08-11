@@ -81,9 +81,6 @@
                       :headers headers
                       :body body}
         response-errors (core/validate-response response-map)]
-  (prn "*********response-errors************************")
-  (prn response-errors)
-  (prn "********************************")
     (if (empty? response-errors)
       (json/encode response-map)
       (swap! errors clojure.set/union response-errors))))
@@ -112,6 +109,11 @@
         time-till-exp (get-time-till-exp (get form-params "expiration"))
         private? (boolean (get form-params "private-bin"))
         bin-response (create-bin-response form-params)]
+  (prn "*********bin-creation************************")
+  (prn (core/create-bin {:private private?
+                         :response bin-response
+                         :time-to-expiration time-till-exp}))
+  (prn "********************************")
     (if-let [bin-id (core/create-bin {:private private?
                                       :response bin-response
                                       :time-to-expiration time-till-exp})]
