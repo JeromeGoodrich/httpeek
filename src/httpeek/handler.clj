@@ -81,8 +81,8 @@
                       :headers headers
                       :body body}
         response-errors (core/validate-response response-map)]
-  (prn "*********status************************")
-  (prn status)
+  (prn "*********response-errors************************")
+  (prn response-errors)
   (prn "********************************")
     (if (empty? response-errors)
       (json/encode response-map)
