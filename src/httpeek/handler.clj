@@ -70,6 +70,7 @@
 (def errors (atom #{}))
 
 (defn- create-bin-response [form-params]
+  (prn form-params)
   (let [status (edn/read-string (get form-params "status"))
         headers (create-headers (get form-params "header-name[]")
                                 (get form-params "header-value[]"))
