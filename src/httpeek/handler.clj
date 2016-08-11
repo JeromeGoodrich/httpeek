@@ -70,7 +70,7 @@
 (def errors (atom #{}))
 
 (defn- create-bin-response [form-params]
-  (prn "*********************************")
+  (prn "*********form-params************************")
   (prn form-params)
   (prn "********************************")
   (let [status (edn/read-string (get form-params "status"))
@@ -81,6 +81,9 @@
                       :headers headers
                       :body body}
         response-errors (core/validate-response response-map)]
+  (prn "*********status************************")
+  (prn status)
+  (prn "********************************")
     (if (empty? response-errors)
       (json/encode response-map)
       (swap! errors clojure.set/union response-errors))))
