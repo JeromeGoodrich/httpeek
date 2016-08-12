@@ -6,6 +6,7 @@
                            [ring/ring-mock "0.3.0"]
                            [ring "1.5.0"]
                            [compojure "1.5.0"]
+                           [org.clojure/tools.logging "0.3.1"]
                            [org.clojure/java.jdbc "0.6.1"]
                            [org.postgresql/postgresql "9.4-1203-jdbc41"]
                            [hiccup "1.0.5"]
