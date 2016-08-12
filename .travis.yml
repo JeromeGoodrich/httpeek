@@ -10,7 +10,7 @@ deploy:
   provider: heroku
   api_key:
     secure: PkoKdFTEqXD+RVDxHBwzsvf3+AfqxZQvPT7O20U1yMs2uw1441HBjwR2jUzw0TZixtPZy1yL7qsjZES1DgWd5GsmBj73Fz/mI0q+RFfpn0jmx90cAZai/N4rdtfHpFtElPetJ/KBbDaLZu0cjOw7+3hr5VE9gCm7mCsJ7OdxNncVuO2yNnDfaxK3U/SWiOEFcneXFxDz237g29T7/eDv+e9MZLFOhHcL5eZ5fIKk1wsgcw/G0pT+Sl/uyuH8mc35MGGRqq74WOAEzCs0ekKPOrSdaBPoSyS6JwMKwrNSFzICOc92kWkJ3s+Di+uiZKycfU9SovuU4KzM92UB3xTQQtxYGJtxHGRTVvLncHazrIAl4qSAiRF7Bcdc/dz/RgI1KuQ9rqWgx4froIToRk6eVY2VNtB9kKqM0V7xRxCTNH+6EDkYUcXfarXnh+fuCGTcpFzaIdyiZO2Au9TdRsTiUaogzb2azAg1LPddO5dEo4Iq5DFSwY82TU5WV9IpPOq/oZzeYuSbSXwE1sNFkGTEz6jGLeTEzanFmAyl0YxeRAqcq7uuCXdBm6/v0yOU5oKCEDv3CYxmhEFKZo4vZ1FjPxgY30ZHusHpKI5og5koGtMY6+FyfbJH3O2DhblGQU7ZB3G+CXXlRA/yyjSv1gxOZpbyWRRRroIUDAtqyR/Hqcc=
-  run: "lein migrate"
+  run: "lein with-profile heroku migrate"
   app: morning-falls-88118
   on:
     repo: Jgoodrich07/httpeek
