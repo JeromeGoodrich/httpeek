@@ -3,7 +3,7 @@
             [cheshire.core :as json]
             [environ.core :refer [env]]))
 
-(def db (env :db))
+(def db (env :database-url))
 
 (extend-protocol j/IResultSetReadColumn
   org.postgresql.util.PGobject
