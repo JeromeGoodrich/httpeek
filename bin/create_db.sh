@@ -7,10 +7,11 @@ setup_db() {
   local db_profile_name="$2"
 
   echo "Creating database user..."
-  createuser --createdb admin || echo "Skipping..."
+  createuser --createdb httpeek || echo "Skipping..."
+  psql -c "ALTER USER httpeek PASSWORD 'password';"
 
   echo "Creating ${db_profile_name} database..."
-  createdb --username=admin ${db_name} || echo "Skipping..."
+  createdb --username=httpeek ${db_name} || echo "Skipping..."
 
   psql ${db_name} -c 'CREATE EXTENSION "pgcrypto";' || echo "Skipping..."
 

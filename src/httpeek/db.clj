@@ -3,12 +3,8 @@
             [cheshire.core :as json]
             [environ.core :refer [env]]))
 
-(def db
-  {:classname (env :db-classname)
-   :subprotocol (env :db-subprotocol)
-   :subname (env :db-subname)
-   :user (env :db-user)
-   :password (env :db-password)})
+
+(def db (env :database-url))
 
 (extend-protocol j/IResultSetReadColumn
   org.postgresql.util.PGobject

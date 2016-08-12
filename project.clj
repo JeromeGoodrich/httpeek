@@ -18,7 +18,6 @@
                            [org.clojure/data.xml "0.0.8"]
                            [ring/ring-json "0.4.0"]]
             :min-lein-version "2.0.0"
-            :main httpeek.main
             :profiles {:test {:dependencies [[speclj "3.3.1"]]}}
             :plugins [[speclj "3.3.1"]
                       [lein-environ "1.0.3"]
