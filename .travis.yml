@@ -10,7 +10,7 @@ deploy:
   provider: heroku
   api_key:
     secure: NUrRimj1TGWMw8sSxGYOkIJn1SVnzOLRcjXX3w9J6zLe69Bpte4T6eh/CBOeGISAhjw5c5Ewgp8bg9RyBZuGsNfcdaAq5JtJZyVmEKbjEgjmqbj3BhzPLVqMYe2ieeeMv+PDFFyOX8SZbdA5pgowEiHZ2/ma/awKhE2JQ0frj0aBYeEYHsYGgfphCgBaf+2c1zOn2VkO9rFdLtl6nRyUAR6reHX0weGIkdDgR0dIrzg+chQYAS/y/hHJGvPksUUMlFOCpS9Eu+QcxtWyAZmH3RkGMPaTst0YsBGfup8RVCtvUuKuRFGmYD2qbbS4I8ErxkBoeNs2pVYLTw81Zatut4IEDg2uMePZ1lMLxQ7TmbPTZ82otMoMZ031AgBwVq6BfQIGgA8sDKl8QXaEc1wStXMSQ9SwmbN3UZ0KLbXNhL6ihvMhWUTjwwvyMZjtUYqiuMaG0iYyXbcKkhDvrfeIMdDTngILZgqBTbZtrAAf26DwdPYfngF9xmR5vc18M5vZlURYVlqzsqwnfO+ojOg8eCZ1867fDMp8caLB+r2UgBqI5uUkA1fsj1PSEO59dK/K9P7SjdTOuSZwCxZcN3UbkOZH/x4d80GfQ0kqpj4Pz9N+J4LdKBq8bpK84X2hKr+RKtG32bP7ErAy6X6P5dlZN3MX78M/0zr1cvScJnEcgEc=
-  run: "lein migrate"
+  run: "lein with-profile heroku migrate"
   app: fast-depths-82767
   on:
     repo: Jgoodrich07/httpeek
