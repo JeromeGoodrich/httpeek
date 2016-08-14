@@ -1,6 +1,7 @@
 (ns httpeek.views
   (require [hiccup.page :as page]
            [hiccup.element :as elem]
+           [camel-snake-kebab.core :as csk]
            [httpeek.core :as core]
            [httpeek.content-type-presenter :as presenter]
            [hiccup.core :as h]))
@@ -92,11 +93,11 @@
 (defn- list-headers [headers]
   [:ul.mdl-list
    (map (fn [[k v]] [:li.mdl-list__item
-                     [:p [:b (name k) ] (str ": " v)]]) headers)])
+                     [:p [:b (csk/->HTTP-Header-Case (name k)) ] (str ": " v)]]) headers)])
 
 (defn- raw-headers [headers]
    (map (fn [[k v]] [:li
-                     (str (name k) ": " v)]) headers))
+                     (str (csk/->HTTP-Header-Case (name k)) ": " v)]) headers))
 
 (defn- display-raw-request [{:keys [request-method protocol uri headers body] :as full-request}]
   [:ul.raw-request
