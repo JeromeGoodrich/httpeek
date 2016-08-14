@@ -163,7 +163,7 @@
   [:body
    (navbar)
    [:main.mdl-layout__content
-    [:h4.bin-title (h/h (format "URL: %s/bin/%s" host id))]
+    [:h4.bin-title (h/h (format "http://%s/bin/%s" host id))]
     [:form.bin-title {:action (h/h (format "/bin/%s/delete" id)) :method "POST"}
      [:button.mdl-button.mdl-js-button.mdl.button--fab.mdl-button--colored {:type "submit"} (h/h "Delete Bin")
       [:i.material-icons (h/h "delete")]]]
