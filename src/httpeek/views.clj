@@ -111,7 +111,8 @@
 (defn- request-card [request]
   (let [{:keys [created_at full_request]} request
         {{:keys [headers body
-                 request-method]} :full_request} request]
+                 request-method
+                 query-string]} :full_request} request]
     [:div.request-card.mdl-card.mdl-shadow--2dp
      [:div.mdl-card__title
       [:h2.mdl-card__title-text (h/h (clojure.string/upper-case request-method))]]
@@ -122,6 +123,12 @@
        [:a.mdl-tabs__tab {:href "#raw-request"} "Raw-Request"]]
       [:div#formatted-request.mdl-tabs__panel.is-active
        [:div.mdl-card__actions.mdl-card--border
+        [:div.mdl-grid
+         [:div.mdl-cell.mdl-cell--6-col
+          [:h4 (h/h (str "Query Params"))]]]
+        [:div.mdl-grid
+         [:div.mdl-cell.mdl-cell--6-col
+          [:p (h/h query-string)]]]
         [:div.mdl-grid
          [:div.mdl-cell.mdl-cell--6-col
           [:h4 (h/h (str "Headers"))]]
