@@ -6,10 +6,10 @@
   (context "formatting a json string"
     (it "correctly formats a proper json string"
       (let  [formatted-json (format-json "{\"foo\":\"bar\"}")]
-        (should= "{\n  \"foo\" : \"bar\"\n}"
+        (should= {:body "{\n  \"foo\" : \"bar\"\n}"}
                  formatted-json)))
 
     (it "returns a error message if the json string is malformed"
       (let  [formatted-json (format-json "not-a-json-string")]
-        (should= "Malformed JSON in the request body"
+        (should= {:body "not-a-json-string" :warning "Malformed JSON in the request body"}
                  formatted-json)))))

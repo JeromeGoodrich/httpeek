@@ -138,7 +138,8 @@
          [:div.mdl-cell.mdl-cell--6-col (list-headers headers)]
          (if-let [content-type (:content-type headers)]
            [:div.mdl-cell.mdl-cell--6-col
-            [:pre (h/h (presenter/present-content-type content-type body))]])]]]
+            [:pre (h/h (:body (presenter/present-content-type content-type body)))]
+            [:p (h/h (:warning (presenter/present-content-type content-type body)))]])]]]
       [:div#raw-request.mdl-tabs__panel
         [:div.mdl-card__actions.mdl-card--border
         [:div.mdl-grid
