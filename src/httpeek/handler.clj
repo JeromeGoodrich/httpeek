@@ -70,11 +70,6 @@
               (map #(name %) header-values))
       nil)))
 
-(defn- create-body [body]
-  (if body
-    (.getBytes body)
-    nil))
-
 (def errors (atom #{}))
 
 (defn- create-bin-response [form-params]
@@ -137,7 +132,7 @@
 (defn- handle-api-not-found [message]
   (response/not-found {:message message}))
 
-(defn- validate-body [body]
+(defn- validate-response-body [body]
   (if (and (vector? body) (every? integer? body))
     body
     nil))
@@ -151,7 +146,7 @@
       nil)))
 
 (defn- response-config [response]
-  (if-let [response-body (validate-body (:body response))]
+  (if-let [response-body (validate-response-body (:body response))]
     (format-response response response-body)
     nil))
 
