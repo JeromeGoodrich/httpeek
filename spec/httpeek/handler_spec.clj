@@ -8,7 +8,8 @@
             [ring.util.io :as r-io]
             [ring.util.codec :as codec]
             [cheshire.core :as json]
-            [httpeek.core :as core]))
+            [httpeek.core :as core])
+  (:import java.io.ByteArrayInputStream))
 
 (describe "httpeek.handler"
   (after (helper/reset-db))
@@ -59,7 +60,9 @@
 
       (context "When a bin is successfully created"
         (it "returns a successful json response"
-          (let  [response (api-create-bin-response helper/bin-response)
+          (let  [response (api-create-bin-response (json/encode {:status 200
+                                                                 :headers {}
+                                                                 :body [1 2 3 4 5]}))
                 bin-id (->> (core/get-bins {:limit 50}) (sort-by :created_at) last :id)
                 body (json/decode (:body response))]
             (should= 200 (:status response))
@@ -67,13 +70,24 @@
             (should= (format "http://localhost/bin/%s" bin-id) (get body "bin-url"))))
 
         (it "Created a bin with the correct response attributes"
-          (api-create-bin-response helper/bin-response)
+          (api-create-bin-response (json/encode {:status 200
+                                                 :headers {"foo" "bar"}
+                                                 :body [1 2 3 4 5]}))
           (let [bin (->> (core/get-bins {:limit 50}) (sort-by :created-at) last)]
-            (should= 500 (:status (:response bin)))
+            (should= 200 (:status (:response bin)))
             (should= {:foo "bar"} (:headers (:response bin)))
-            (should= "hello world" (:body (:response bin))))))
+            (should= [1 2 3 4 5] (:body (:response bin))))))
 
       (context "When a bin creation attempt is unsuccessful"
+        (it "doesn't create a bin if the body is not a vector of integers"
+          (api-create-bin-response (json/encode {:status 303 :headers {} :body "not-an-array-of-ints"}))
+          (let [bin (->> (core/get-bins {:limit 50}) (sort-by :created-at) last)]
+            (should-be-nil bin)))
+
+        (it "returns an error message if the body is not a vector of integers"
+          (let [response (api-create-bin-response (json/encode {:status 303 :headers {} :body "not-an-array-of-ints"}))]
+            (should= "Bad Request" (:body response))))
+
         (it "doesn't create a bin if there is no status in the response-map"
           (api-create-bin-response (json/encode {:headers {} :body ""}))
           (let [bin (->> (core/get-bins {:limit 50}) (sort-by :created-at) last)]
@@ -118,7 +132,7 @@
 
     (context "When a bin is successfully created"
       (context "And an expiration time is specified"
-        (it "create a bin with the expected expiration time"
+        (it "creates a bin with the expected expiration time"
           (let [response (create-bin-response (encode-form-data {"status" 200 "expiration" 7}))
                 bin (->> (core/get-bins {:limit 50}) (sort-by :created-at) last)
                 before (t/minus (t/from-now (t/hours 7)) (t/seconds 1))
@@ -162,7 +176,7 @@
                 bin (->> (core/get-bins {:limit 50}) (sort-by :created-at) last)]
             (should= 500 (:status (:response bin)))
             (should= {:foo "bar" :baz "buzz"} (:headers (:response bin)))
-            (should= "some text"(:body (:response bin))))))
+            (should= "some text" (:body (:response bin))))))
 
       (context "With valid response attributes"
         (it "redirects to the bin's inspect page"
@@ -282,7 +296,7 @@
               response (app* (mock/request :get (format "/bin/%s" bin-id)))]
           (should= 500 (:status response))
           (should= {"foo" "bar"} (:headers response))
-          (should= "hello world" (:body response)))))
+          (should= "hello world" (slurp (:body response))))))
 
     (context "Other request with existing bin"
       (it "returns the bin's set response"
@@ -290,7 +304,7 @@
               response (app* (mock/request :post (format "/bin/%s" bin-id)))]
           (should= 500 (:status response))
           (should= {"foo" "bar"} (:headers response))
-          (should= "hello world" (:body response)))))
+          (should= "hello world" (slurp (:body response))))))
 
     (context "GET request with non-existent bin"
       (it "returns a 404 status"

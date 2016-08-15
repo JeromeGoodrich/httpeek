@@ -10,7 +10,8 @@
             [compojure.route :as route]
             [httpeek.core :as core]
             [cheshire.core :as json]
-            [httpeek.views :as views]))
+            [httpeek.views :as views])
+  (:import java.io.ByteArrayInputStream))
 
 (defn- str->uuid [uuid-string]
   (core/with-error-handling nil
@@ -41,8 +42,10 @@
 
 (defn- add-request-to-bin [id request-body]
   (core/add-request id request-body)
-  (let [response (:response (core/find-bin-by-id id))]
-    (update response :headers walk/stringify-keys)))
+  (let [response (:response (core/find-bin-by-id id))
+        body (ByteArrayInputStream. (.getBytes (:body response)))]
+    (-> (update response :headers walk/stringify-keys)
+      (assoc :body body))))
 
 (defn- route-request-to-bin [{:keys [requested-bin body] :as parsed-request}]
   (if-let [bin-id (:id requested-bin)]
@@ -66,6 +69,11 @@
       (zipmap (map #(name %) header-names)
               (map #(name %) header-values))
       nil)))
+
+(defn- create-body [body]
+  (if body
+    (.getBytes body)
+    nil))
 
 (def errors (atom #{}))
 
@@ -129,12 +137,23 @@
 (defn- handle-api-not-found [message]
   (response/not-found {:message message}))
 
+(defn- validate-body [body]
+  (if (vector? body)
+    (if (every? integer? body)
+      body
+      nil)
+    nil))
+
 (defn- response-config [body]
-  (let [formatted-body (update body :headers walk/stringify-keys)
-        errors (core/validate-response formatted-body)]
-    (if (empty? errors)
-      formatted-body
-      nil)))
+  (if-let [response-body (validate-body (:body body))]
+    (let [validated-body (validate-body (:body body))
+          formatted-body (-> (update body :headers walk/stringify-keys)
+                           (assoc :body response-body))
+          errors (core/validate-response formatted-body)]
+      (if (empty? errors)
+        formatted-body
+        nil))
+    nil))
 
 (defn- handle-api-create-bin [body {:strs [host] :as headers}]
   (if-let [response (response-config body)]
