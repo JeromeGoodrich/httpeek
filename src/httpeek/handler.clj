@@ -70,6 +70,11 @@
               (map #(name %) header-values))
       nil)))
 
+(defn- create-body [body]
+  (if body
+    (.getBytes body)
+    nil))
+
 (def errors (atom #{}))
 
 (defn- create-bin-response [form-params]
