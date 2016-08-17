@@ -28,11 +28,17 @@
         (should-be-nil (validate-response (json/decode default-response true)))))
 
     (context "And the response-map is malformed"
+      (it "return as map of errors when status is not a 3 digit number"
+        (let [status-not-number-error (validate-response {:status "not a number" :headers {} :body ""})
+              status-not-3-digits-error (validate-response {:status 600000 :headers {} :body ""})]
+          (should= #{"status must be a 3 digit number"} status-not-number-error)
+          (should= #{"status must be a 3 digit number"} status-not-3-digits-error)))
+
       (it "returns a map of errors when status is nil or empty"
-        (let [status-nil-errors (validate-response {:status nil :headers {} :body ""})
-              status-empty-errors (validate-response {:status "" :headers {} :body ""})]
-          (should= #{"status can't be blank"} status-nil-errors)
-          (should= #{"status can't be blank"} status-empty-errors)))
+        (let [status-nil-error (validate-response {:status nil :headers {} :body ""})
+              status-empty-error (validate-response {:status "" :headers {} :body ""})]
+          (should= #{"status must be a 3 digit number"} status-nil-error)
+          (should= #{"status must be a 3 digit number"} status-empty-error)))
 
       (it "returns a map of errors when headers are nil"
         (let [headers-nil-errors (validate-response {:status 200 :headers nil :body "ok"})]
