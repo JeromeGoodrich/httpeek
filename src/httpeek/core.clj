@@ -26,15 +26,15 @@
         header-errors (v/errors :headers errors-map)]
     (clojure.set/union status-errors header-errors)))
 
-(defn- three-digits? [map attribute]
+(defn- valid-status-code? [map attribute]
   (let [status (get map attribute)]
-    (and (number? status) (= 3 (count (str status))))))
+    (and (integer? status) (<= 100 status) (> 1000 status))))
 
 (defn validate-response [response]
   (let [validator (v/validation-set
                     (v/presence-of :status
                                    :message "status must be a 3 digit number")
-                    (v/validate-with-predicate :status #(three-digits? % :status)
+                    (v/validate-with-predicate :status #(valid-status-code? % :status)
                                                :message "status must be a 3 digit number")
                     (v/presence-of :headers
                                    :message "headers must have header name and value"))]

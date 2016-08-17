@@ -8,41 +8,60 @@
   (after (helper/reset-db))
 
   (context "When validating user-inputted expiration time"
-    (context "And the expiration time is less than 1 or greater than 24 hours"
+    (context "And the expiration time is less than 1 hour"
       (it "returns a map of errors"
-       (let [less-than-time-range-error (validate-expiration {:time-to-expiration 0})
-             greater-than-time-range-error (validate-expiration {:time-to-expiration 50})]
-         (should= #{"expiration time must be an integer between 1 and 24"} less-than-time-range-error)
+       (let [less-than-time-range-error (validate-expiration {:time-to-expiration 0})]
+         (should= #{"expiration time must be an integer between 1 and 24"} less-than-time-range-error))))
+
+    (context "And the expiration time is greater than 24 hours"
+      (it "returns a map of errors"
+       (let [greater-than-time-range-error (validate-expiration {:time-to-expiration 50})]
          (should= #{"expiration time must be an integer between 1 and 24"} greater-than-time-range-error))))
 
     (context "And the expiration time is not an integer"
       (it "returns a map of errors"
-       (let [less-than-time-range-error (validate-expiration {:time-to-expiration 4.5})
-             greater-than-time-range-error (validate-expiration {:time-to-expiration "foo"})]
-         (should= #{"expiration time must be an integer between 1 and 24"} less-than-time-range-error)
-         (should= #{"expiration time must be an integer between 1 and 24"} greater-than-time-range-error)))))
+       (let [not-an-integer-error (validate-expiration {:time-to-expiration 4.5})]
+         (should= #{"expiration time must be an integer between 1 and 24"}  not-an-integer-error))))
+
+    (context "And the expiration time is a string"
+      (it "returns a map of errors"
+       (let [string-error (validate-expiration {:time-to-expiration "foo"})]
+         (should= #{"expiration time must be an integer between 1 and 24"} string-error)))))
 
   (context "When validating a user-inputted response"
     (context "And the response-map is well-formed"
       (it "returns nil"
         (should-be-nil (validate-response (json/decode default-response true)))))
 
-    (context "And the response-map is malformed"
-      (it "return as map of errors when status is not a 3 digit number"
-        (let [status-not-number-error (validate-response {:status "not a number" :headers {} :body ""})
-              status-not-3-digits-error (validate-response {:status 600000 :headers {} :body ""})]
-          (should= #{"status must be a 3 digit number"} status-not-number-error)
-          (should= #{"status must be a 3 digit number"} status-not-3-digits-error)))
+    (context "And the status is nil"
+      (it "returns a map of errors"
+        (let [status-nil-error (validate-response {:status nil :headers {} :body ""})]
+          (should= #{"status must be a 3 digit number"} status-nil-error))))
 
-      (it "returns a map of errors when status is nil or empty"
-        (let [status-nil-error (validate-response {:status nil :headers {} :body ""})
-              status-empty-error (validate-response {:status "" :headers {} :body ""})]
-          (should= #{"status must be a 3 digit number"} status-nil-error)
-          (should= #{"status must be a 3 digit number"} status-empty-error)))
+    (context "And the status is blank"
+      (it "returns a map of errors"
+        (let [status-blank-error (validate-response {:status "" :headers {} :body ""})]
+          (should= #{"status must be a 3 digit number"} status-blank-error))))
 
-      (it "returns a map of errors when headers are nil"
-        (let [headers-nil-errors (validate-response {:status 200 :headers nil :body "ok"})]
-          (should= #{"headers must have header name and value"} headers-nil-errors)))))
+    (context "And the status is a string"
+      (it "returns a map of errors"
+        (let [status-string-error (validate-response {:status "not a number" :headers {} :body ""})]
+          (should= #{"status must be a 3 digit number"} status-string-error))))
+
+    (context "And the status is less than 3 digits"
+      (it "returns a map of errors"
+        (let [status-less-than-three-digits-error (validate-response {:status 4 :headers {} :body ""})]
+          (should= #{"status must be a 3 digit number"} status-less-than-three-digits-error))))
+
+    (context "And the status is more than 3 digits"
+      (it "returns a map of errors"
+        (let [status-more-than-three-digits-error (validate-response {:status 600000 :headers {} :body ""})]
+          (should= #{"status must be a 3 digit number"} status-more-than-three-digits-error))))
+
+    (context "And the status is not an integer"
+      (it "returns a map of errors"
+        (let [status-not-integer-error (validate-response {:status 400.5 :headers {} :body ""})]
+          (should= #{"status must be a 3 digit number"} status-not-integer-error)))))
 
   (context "When creating a bin"
     (context "And no options are specified"
