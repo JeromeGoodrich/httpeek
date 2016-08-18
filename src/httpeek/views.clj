@@ -29,6 +29,7 @@
                            "https://code.getmdl.io/1.1.3/material.light_blue-indigo.min.css"
                            "/css/main.css")
    (page/include-js "https://code.getmdl.io/1.1.3/material.min.js"
+                    "/js/toggle_formats.js"
                     "/js/add_headers.js")])
 
 (def create-bin-form
@@ -117,11 +118,10 @@
      [:div.mdl-card__title
       [:h2.mdl-card__title-text (h/h (clojure.string/upper-case request-method))]]
      [:div.mdl-card__supporting-text (h/h (str created_at))]
-     [:div.mdl-tabs.mdl-js-tabs
-      [:div.mdl-tabs__tab-bar
-       [:a.mdl-tabs__tab.is-active {:href "#formatted-request"} "Formatted-Request"]
-       [:a.mdl-tabs__tab {:href "#raw-request"} "Raw-Request"]]
-      [:div#formatted-request.mdl-tabs__panel.is-active
+       [:div.request-content
+        [:button.show-formatted-request.mdl-button.mdl-js-button.mdl-button--colored {:type "button" :style "display:none;"} (h/h "Formatted Request")]
+        [:button.show-raw-request.mdl-button.mdl-js-button.mdl-button--colored {:type "button" :style "display:block;"} (h/h "Raw Request")]
+      [:div.formatted-request {:style "display;block;"}
        [:div.mdl-card__actions.mdl-card--border
         [:div.mdl-grid
          [:div.mdl-cell.mdl-cell--6-col
@@ -140,7 +140,7 @@
            [:div.mdl-cell.mdl-cell--6-col
             [:pre (h/h (:body (presenter/present-content-type content-type body)))]
             [:p (h/h (:warning (presenter/present-content-type content-type body)))]])]]]
-      [:div#raw-request.mdl-tabs__panel
+      [:div.raw-request {:style "display:none;"}
         [:div.mdl-card__actions.mdl-card--border
         [:div.mdl-grid
          [:div.mdl-cell.mdl-cell--8-col
