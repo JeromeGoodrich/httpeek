@@ -8,7 +8,7 @@
           formattedRequest = requestContent.querySelector('.formatted-request'),
           rawRequest = requestContent.querySelector('.raw-request');
 
-      function showRaw(formattedButton, rawRequest, formattedRequest) {
+      function showRaw(rawButton, formattedButton, rawRequest, formattedRequest) {
         rawButton.style.display = 'none';
         formattedButton.style.display = 'block';
         formattedRequest.style.display = 'none';
