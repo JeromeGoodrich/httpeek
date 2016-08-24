@@ -109,7 +109,22 @@
    (if (not (empty? body))
    [:li body])])
 
-(defn- request-card [request]
+(defn- request-body [body content-type]
+  [:div.request-body {:data-type "request-body"}
+   `[:div.mdl-cell.mdl-cell--6-col
+
+     ~@(when-not (= body (:body (presenter/present-content-type content-type body)))
+
+         [[:button.toggle-to-formatted.mdl-button.mdl-js-button.mdl-button--colored {:type "button" :style "display:none;"} (h/h "Formatted_Body")]
+          [:button.toggle-to-raw.mdl-button.mdl-js-button.mdl-button--colored {:type "button" :style "display:block;"} (h/h "Raw_Body")]])
+
+     [:div.formatted-body {:style "display:block;"}
+      [:pre ~(h/h (:body (presenter/present-content-type content-type body)))]
+      [:p ~(h/h (:warning (presenter/present-content-type content-type body)))]]
+     [:div.raw-body {:style "display:none"}
+      [:p ~(h/h body)]]]])
+
+  (defn- request-card [request]
   (let [{:keys [created_at full_request]} request
         {{:keys [headers body
                  request-method
@@ -119,9 +134,9 @@
       [:h2.mdl-card__title-text (h/h (clojure.string/upper-case request-method))]]
      [:div.mdl-card__supporting-text (h/h (str created_at))]
      [:div.request-content
-      [:button.show-formatted-request.mdl-button.mdl-js-button.mdl-button--colored {:type "button" :style "display:none;"} (h/h "Formatted Request")]
-      [:button.show-raw-request.mdl-button.mdl-js-button.mdl-button--colored {:type "button" :style "display:block;"} (h/h "Raw Request")]
-      [:div.formatted-request {:style "display:block;"}
+      [:button.toggle-to-formatted.mdl-button.mdl-js-button.mdl-button--colored {:type "button" :style "display:none;"} (h/h "Formatted Request")]
+      [:button.toggle-to-raw.mdl-button.mdl-js-button.mdl-button--colored {:type "button" :style "display:block;"} (h/h "Raw Request")]
+      [:div.formatted-content {:style "display:block;"}
        [:div.mdl-card__actions.mdl-card--border
         [:div.mdl-grid
          [:div.mdl-cell.mdl-cell--6-col
@@ -137,10 +152,8 @@
         [:div.mdl-grid
          [:div.mdl-cell.mdl-cell--6-col (list-headers headers)]
          (if-let [content-type (:content-type headers)]
-           [:div.mdl-cell.mdl-cell--6-col
-            [:pre (h/h (:body (presenter/present-content-type content-type body)))]
-            [:p (h/h (:warning (presenter/present-content-type content-type body)))]])]]]
-      [:div.raw-request {:style "display:none;"}
+           (request-body body content-type))]]]
+      [:div.raw-content {:style "display:none;"}
        [:div.mdl-card__actions.mdl-card--border
         [:div.mdl-grid
          [:div.mdl-cell.mdl-cell--8-col
