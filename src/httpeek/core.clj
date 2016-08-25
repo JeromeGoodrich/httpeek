@@ -41,9 +41,9 @@
     (format-errors (validator response))))
 
 (def default-response
-  (json/encode {:status 200
-                :headers {}
-                :body "ok"}))
+  {:status 200
+   :headers {}
+   :body "ok"})
 
 (defn create-bin [{:keys [private response time-to-expiration],
                    :or {private false

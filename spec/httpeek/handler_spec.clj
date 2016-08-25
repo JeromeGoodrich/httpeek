@@ -4,7 +4,6 @@
             [ring.mock.request :as mock]
             [httpeek.spec-helper :as helper]
             [clj-time.core :as t]
-            [clj-time.coerce :as ct]
             [ring.util.io :as r-io]
             [ring.util.codec :as codec]
             [cheshire.core :as json]
@@ -27,7 +26,7 @@
     (context "GET /bin/:id/inspect"
       (it "returns a json response for inspecting an existing bin"
         (let [bin-id (core/create-bin {:private false :response helper/bin-response})
-              request (core/add-request bin-id (json/encode (mock/request :get (format "/bin/%s" bin-id))))
+              request (core/add-request bin-id (mock/request :get (format "/bin/%s" bin-id)))
               response (app* (mock/request :get (format "/api/bin/%s/inspect" bin-id)))
               body (json/decode (:body response))]
           (should= 200 (:status response))
@@ -137,7 +136,7 @@
                 bin (->> (core/get-bins {:limit 50}) (sort-by :created-at) last)
                 before (t/minus (t/from-now (t/hours 7)) (t/seconds 1))
                 after (t/plus (t/from-now (t/hours 7)) (t/seconds 1))]
-            (should (t/within? before after (ct/from-sql-time (:expiration bin)))))))
+            (should (t/within? before after (:expiration bin))))))
 
       (context "And only a status is specified for the response"
         (it "creates a bin with the correct response attributes"

@@ -13,6 +13,11 @@
             [httpeek.views.layouts :as views])
   (:import java.io.ByteArrayInputStream))
 
+(extend-protocol cheshire.generate/JSONable
+  org.joda.time.DateTime
+  (to-json [t jg]
+    (cheshire.generate/write-string jg (str t))))
+
 (defn- str->uuid [uuid-string]
   (core/with-error-handling nil
                             (java.util.UUID/fromString uuid-string)))
@@ -82,7 +87,7 @@
                       :body body}
         response-errors (core/validate-response response-map)]
     (if (empty? response-errors)
-      (json/encode response-map)
+      response-map
       (swap! errors clojure.set/union response-errors))))
 
 (defn- get-time-till-exp [hours]
@@ -152,7 +157,7 @@
 
 (defn- handle-api-create-bin [body {:strs [host] :as headers}]
   (if-let [response (response-config body)]
-    (let [bin-id (core/create-bin {:private false :response (json/encode response)})]
+    (let [bin-id (core/create-bin {:private false :response response})]
       (response/response {:bin-url (format "http://%s/bin/%s" host bin-id)
                           :inspect-url (format "http://%s/bin/%s/inspect" host bin-id)
                           :delete-url (format "http://%s/api/bin/%s/" host bin-id)}))
@@ -166,7 +171,7 @@
       (handle-api-not-found (format "The bin %s could not be deleted because it doesn't exist" id)))))
 
 (defn- handle-api-inspect-bin [id]
-  (if-let [bin-id (:id (core/find-bin-by-id id))]
+  (if-let [bin-id (:id (core/find-bin-by-id (str->uuid id)))]
     (response/response {:bin-id bin-id
                         :requests (core/get-requests bin-id)})
     (handle-api-not-found (format "The bin %s could not be found" id))))

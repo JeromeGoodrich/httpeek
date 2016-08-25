@@ -12,6 +12,7 @@
                            [hiccup "1.0.5"]
                            [migratus "0.8.25"]
                            [camel-snake-kebab "0.4.0"]
+                           [clj-time "0.12.0"]
                            [environ "1.0.3"]
                            [speclj "3.3.1"]
                            [clojurewerkz/quartzite "2.0.0"]
