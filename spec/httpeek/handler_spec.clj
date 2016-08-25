@@ -222,7 +222,7 @@
                                                                  "expiration" 7}))
                 bin (->> (core/get-bins {:limit 50}) (sort-by :created-at) last)]
             (should= 302 (:status response))
-            (should-contain "status can't be blank" (:flash response)))))
+            (should-contain "status must be a 3 digit number" (:flash response)))))
 
       (context "and headers are not filled out properly"
         (it "doesn't create the bin"
