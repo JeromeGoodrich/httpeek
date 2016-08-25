@@ -10,7 +10,7 @@
             [compojure.route :as route]
             [httpeek.core :as core]
             [cheshire.core :as json]
-            [httpeek.views :as views])
+            [httpeek.views.layouts :as views])
   (:import java.io.ByteArrayInputStream))
 
 (defn- str->uuid [uuid-string]
