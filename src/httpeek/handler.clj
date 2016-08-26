@@ -25,7 +25,7 @@
       (if (and private? (not permitted?))
         (response/status (response/response "private bin") 403)
         (views/inspect-bin-page id host (core/get-requests id)))
-      (response/not-found (views/not-found-page)))))
+      (response/not-found views/not-found-page))))
 
 (defn- slurp-body [request]
   (if (:body request)
@@ -50,7 +50,7 @@
 (defn- route-request-to-bin [{:keys [requested-bin body] :as parsed-request}]
   (if-let [bin-id (:id requested-bin)]
     (add-request-to-bin bin-id body)
-    (response/not-found (views/not-found-page))))
+    (response/not-found views/not-found-page)))
 
 (defn- str->vector [input]
   (if (string? input)
@@ -122,7 +122,7 @@
         delete-count (core/delete-bin bin-id)]
     (if (< 0 delete-count)
       (response/redirect "/")
-      (response/not-found (views/not-found-page)))))
+      (response/not-found views/not-found-page))))
 
 (defn- handle-web-request-to-bin [request]
   (-> request
@@ -192,7 +192,7 @@
   (ANY "/bin/:id" req (handle-web-request-to-bin req))
   (POST "/bin/:id/delete" [id] (handle-web-delete-bin id))
   (route/resources "/")
-  (route/not-found (views/not-found-page)))
+  (route/not-found views/not-found-page))
 
 (def app*
   (routes (-> api-routes

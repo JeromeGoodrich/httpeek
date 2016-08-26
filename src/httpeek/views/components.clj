@@ -1,8 +1,9 @@
 (ns httpeek.views.components
   (require [hiccup.page :as page]
+           [hiccup.def :refer :all]
            [hiccup.core :as h]))
 
-(defn head []
+(def head
   [:head (page/include-css "https://fonts.googleapis.com/icon?family=Material+Icons"
                            "https://code.getmdl.io/1.1.3/material.light_blue-indigo.min.css"
                            "/css/main.css")
@@ -10,7 +11,7 @@
                     "/js/toggle_formats.js"
                     "/js/add_headers.js")])
 
-(defn navbar []
+(def navbar
   [:div.mdl-layout.mdl-layout--fixed-header
    [:header.mdl-layout__header
     [:div.mdl-layout__header-row
@@ -23,7 +24,7 @@
     [:nav.mdl-navigation.mdl-layout--large-screen-only
      [:a.mdl-navigation__link {:href "/"} (h/h "Home")]]]])
 
-(defn footer []
+(def footer
   [:footer.mdl-mini-footer
    [:div.mdl-mini-footer__left-section
     [:div.mdl-logo (h/h "HTTPeek")]]])
@@ -48,8 +49,8 @@
    content])
 
 (defn form [{:keys [id action method]} content]
-  `[:form {:id ~id :action ~action :method ~method}
-   ~@content])
+  [:form {:id id :action action :method method}
+   content])
 
 (defn grid [& content]
   [:div.mdl-grid
@@ -58,9 +59,9 @@
 (defn card [{:keys [card-class title supporting-text]} & content]
  [:div.mdl-card.mdl-shadow--2dp {:class card-class}
    [:div.mdl-card__title
-    [:h2.mdl-card__title-text (h/h title)]
+    [:h2.mdl-card__title-text (h/h title)]]
     (if supporting-text
-      [:div.mdl-card__supporting-text (h/h supporting-text)])]
+      [:div.mdl-card__supporting-text (h/h supporting-text)])
    content])
 
 (defn card-actions [& content]

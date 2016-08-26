@@ -1,6 +1,8 @@
 (ns httpeek.views.not-found
-  (require [hiccup.core :as h]))
+  (require [hiccup.core :as h]
+           [httpeek.views.components :refer :all]))
 
-(defn not-found-html []
+(def not-found-html
+   [:body navbar
     [:div
-     [:h1 (h/h "Sorry! The Page You were looking for cannot be found")]])
+     [:h1 (h/h "Sorry! The Page You were looking for cannot be found")]]])
