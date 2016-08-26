@@ -4,6 +4,7 @@
 /checkouts
 npm-debug.log
 pom.xml
+*.log
 *.jar
 *.class
 .lein-deps-sum
