@@ -21,5 +21,5 @@
     (str (.getWriter out))))
 
 (defn format-xml [xml-string]
-  (core/with-error-handling "Malformed XML in the request body"
-                            (ppxml xml-string)))
+  (core/with-error-handling {:body xml-string :warning "Malformed XML in the request body"}
+                            {:body (ppxml xml-string)}))
