@@ -30,15 +30,15 @@
 
 (defn- request-body [body content-type]
   [:div.request-body {:data-type "request-body"}
-   `[:div.mdl-cell.mdl-cell--6-col
-     ~@(when-not (= body (:body (presenter/present-content-type content-type body)))
-         [(button {:btn-type "button" :btn-class "toggle-to-formatted" :style "display:none;" :html-text "Formatted Body"})
-          (button {:btn-type "button" :btn-class "toggle-to-raw" :style "display:block;" :html-text "Raw Body"})])
-     [:div.formatted-body {:style "display:block;"}
-      [:pre ~(h/h (:body (presenter/present-content-type content-type body)))]
-      [:p ~(h/h (:warning (presenter/present-content-type content-type body)))]]
-     [:div.raw-body {:style "display:none"}
-      [:p ~(h/h body)]]]])
+   [:div.mdl-cell.mdl-cell--6-col
+    (when-not (= body (:body (presenter/present-content-type content-type body)))
+      (list (button {:btn-type "button" :btn-class "toggle-to-formatted" :style "display:none;" :html-text "Formatted Body"})
+            (button {:btn-type "button" :btn-class "toggle-to-raw" :style "display:block;" :html-text "Raw Body"})))
+    [:div.formatted-body {:style "display:block;"}
+     [:pre (h/h (:body (presenter/present-content-type content-type body)))]
+     [:p (h/h (:warning (presenter/present-content-type content-type body)))]]
+    [:div.raw-body {:style "display:none"}
+     [:p (h/h body)]]]])
 
 
 (defn- formatted-request [{:keys [query-string headers body]}]
@@ -73,11 +73,11 @@
 
 (defn inspect-html [id host requests]
   [:body
-   (navbar)
+   navbar
    [:main.mdl-layout__content
     [:h4#bin-title (h/h (format "http://%s/bin/%s" host id))]
     (form {:action (h/h (format "/bin/%s/delete" id)) :method "POST" :id "bin-title"}
-          [(button {:type "submit" :html-text "Delete Bin" :icon "delete"})])
+          (button {:type "submit" :html-text "Delete Bin" :icon "delete"}))
    (if (= (count requests) 0)
      (code-example-card host id)
      (for [request requests]
