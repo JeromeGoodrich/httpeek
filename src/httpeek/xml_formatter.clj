@@ -1,5 +1,5 @@
 (ns httpeek.xml-formatter
-  (:require [httpeek.core :as core]
+  (:require [httpeek.core :as core])
   (:import [java.io StringReader StringWriter]
            [javax.xml.transform TransformerFactory OutputKeys]
            [javax.xml.transform.stream StreamSource StreamResult]))
