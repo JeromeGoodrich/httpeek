@@ -9,7 +9,7 @@
                            "/css/main.css")
    (page/include-js "https://code.getmdl.io/1.1.3/material.min.js"
                     "/js/toggle_formats.js"
-                    "/js/add_headers.js")])
+                    "/js/toggle_header_fields.js")])
 
 (def navbar
   [:div.mdl-layout.mdl-layout--fixed-header
@@ -41,11 +41,11 @@
    (if icon
      [:i.material-icons (h/h icon)])])
 
-(defn nested-grid [{:keys [grid-id]} & content]
-  [:div.mdl-grid.mdl-grid--nesting {:id grid-id} content])
+(defn nested-grid [{:keys [grid-id grid-class]} & content]
+  [:div.mdl-grid.mdl-grid--nesting {:id grid-id :class grid-class} content])
 
-(defn cell [{:keys [id col]} & content]
-  [:div.mdl-cell {:id id :class (format "mdl-cell--%s-col" col)}
+(defn cell [{:keys [id col cell-class]} & content]
+  [:div.mdl-cell {:id id :class (format "mdl-cell--%s-col %s" col cell-class)}
    content])
 
 (defn form [{:keys [id action method]} content]
