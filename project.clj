@@ -30,7 +30,7 @@
                       [lein-ring "0.9.7"]]
             :test-paths ["spec"]
             :jvm-opts ["-Duser.timezone=UTC"]
-            :ring {:handler httpeek.handler/app* :auto-reload? true}
+            :ring {:handler httpeek.router/app* :auto-reload? true}
             :aliases {"migrate" ["run" "-m" "httpeek.migrations/migrate"]
                       "rollback" ["run" "-m" "httpeek.migrations/rollback"]
                       "delete-expired" ["run" "-m" "httpeek.main/-main"]})
