@@ -10,6 +10,11 @@
      (catch Exception e#
        ~default)))
 
+(defn str->uuid [uuid-string]
+  (with-error-handling nil
+                       (java.util.UUID/fromString uuid-string)))
+
+
 (defn validate-expiration [time-to-expiration]
   (let [validator (v/validation-set
                     (v/numericality-of :time-to-expiration
@@ -41,9 +46,9 @@
     (format-errors (validator response))))
 
 (def default-response
-  (json/encode {:status 200
-                :headers {}
-                :body "ok"}))
+  {:status 200
+   :headers {}
+   :body "ok"})
 
 (defn create-bin [{:keys [private response time-to-expiration],
                    :or {private false

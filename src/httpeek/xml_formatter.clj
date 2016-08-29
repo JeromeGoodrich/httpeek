@@ -2,7 +2,6 @@
   (:require [httpeek.core :as core])
   (:import [java.io StringReader StringWriter]
            [javax.xml.transform TransformerFactory OutputKeys]
-           [org.xml.sax SAXParseException]
            [javax.xml.transform.stream StreamSource StreamResult]))
 
 (def xml-transformer

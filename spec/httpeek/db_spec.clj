@@ -76,7 +76,7 @@
         (should= {:foo "bar"} (:headers (:response (find-bin-by-id bin-id))))
         (should= "hello world" (:body (:response (find-bin-by-id bin-id))))
         (should= (ct/to-string expiration)
-                 (ct/to-string (ct/from-sql-time (:expiration (find-bin-by-id bin-id)))))))
+                 (ct/to-string (:expiration (find-bin-by-id bin-id))))))
 
     (it "finds a private bin"
       (let [bin-id (create-bin {:private true
@@ -91,7 +91,7 @@
       (let [bin-id (create-bin {:private false
                                 :response helper/bin-response
                                 :expiration (t/from-now (t/hours 24))})
-            full-request (json/encode {:foo "bar"})
+            full-request {:foo "bar"}
             request-count (count (all-requests))]
         (let [request-id (add-request bin-id full-request)]
         (should= (+ 1 request-count)
@@ -101,8 +101,8 @@
       (let [bin-id (create-bin {:private false
                                 :response helper/bin-response
                                 :expiration (t/from-now (t/hours 24))})
-            full-request (json/encode {:foo "bar"})
-            request-id (add-request bin-id (json/encode full-request))
+            full-request {:foo "bar"}
+            request-id (add-request bin-id full-request)
             request (find-request-by-id request-id)]
         (should= request-id (:id request))
         (should= full-request (:full_request request))
@@ -112,8 +112,8 @@
       (let [bin-id (create-bin {:private false
                                 :response helper/bin-response
                                 :expiration (t/from-now (t/hours 24))})
-            first-request-id (add-request bin-id (json/encode {:position "first"}))
-            second-request-id (add-request bin-id (json/encode {:position "second"}))
+            first-request-id (add-request bin-id {:position "first"})
+            second-request-id (add-request bin-id {:position "second"})
             requests (find-requests-by-bin-id bin-id)]
         (should= 2 (count requests))
         (should= first-request-id (:id (first requests)))
@@ -128,7 +128,7 @@
                                 :expiration (t/from-now (t/hours 24))})
             bin-count (count (get-bins 50))]
         (delete-bin bin-id)
-        (should= (- 1 bin-count) (count (get-bins 50)))
+        (should= (- bin-count 1) (count (get-bins 50)))
         (should-be-nil (find-bin-by-id bin-id))))
 
     (it "returns the count of bins deleted"
@@ -143,8 +143,8 @@
       (let [bin-id (create-bin {:private false
                                 :response helper/bin-response
                                 :expiration (t/from-now (t/hours 24))})
-            first-request-id (add-request bin-id (json/encode {:position "first"}))
-            second-request-id (add-request bin-id (json/encode {:position "second"}))]
+            first-request-id (add-request bin-id {:position "first"})
+            second-request-id (add-request bin-id {:position "second"})]
 
         (delete-bin bin-id)
 

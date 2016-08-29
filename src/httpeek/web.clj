@@ -1,10 +1,7 @@
-(ns httpeek.handler
+(ns httpeek.web
   (:use compojure.core)
   (:require [ring.util.response :as response]
-            [ring.middleware.session :as session]
             [ring.middleware.params :as params]
-            [ring.middleware.flash :as flash]
-            [ring.middleware.json :as ring-json]
             [clojure.edn :as edn]
             [clojure.walk :as walk]
             [compojure.route :as route]
@@ -13,9 +10,10 @@
             [httpeek.views.layouts :as views])
   (:import java.io.ByteArrayInputStream))
 
-(defn- str->uuid [uuid-string]
-  (core/with-error-handling nil
-                            (java.util.UUID/fromString uuid-string)))
+(extend-protocol cheshire.generate/JSONable
+  org.joda.time.DateTime
+  (to-json [t jg]
+    (cheshire.generate/write-string jg (str t))))
 
 (defn- handle-web-inspect-bin [id session {:strs [host] :as headers}]
   (let [requested-bin (core/find-bin-by-id id)
@@ -34,7 +32,7 @@
 
 (defn- parse-request-to-bin [request]
   (let [request (slurp-body request)
-        id (str->uuid (get-in request [:params :id]))
+        id (core/str->uuid (get-in request [:params :id]))
         body (json/encode request {:pretty true})
         requested-bin (core/find-bin-by-id id)]
     {:requested-bin requested-bin
@@ -82,7 +80,7 @@
                       :body body}
         response-errors (core/validate-response response-map)]
     (if (empty? response-errors)
-      (json/encode response-map)
+      response-map
       (swap! errors clojure.set/union response-errors))))
 
 (defn- get-time-till-exp [hours]
@@ -118,7 +116,7 @@
       (user-error-response))))
 
 (defn- handle-web-delete-bin [id]
-  (let [bin-id (str->uuid id)
+  (let [bin-id (core/str->uuid id)
         delete-count (core/delete-bin bin-id)]
     (if (< 0 delete-count)
       (response/redirect "/")
@@ -129,75 +127,14 @@
     (parse-request-to-bin)
     (route-request-to-bin)))
 
-(defn- handle-api-not-found [message]
-  (response/not-found {:message message}))
-
-(defn- validate-response-body [body]
-  (if (and (vector? body) (every? integer? body))
-    body
-    nil))
-
-(defn- format-response [response response-body]
-  (let [formatted-response (-> (update response :headers walk/stringify-keys)
-                         (assoc :body response-body))
-        errors (core/validate-response formatted-response)]
-    (if (empty? errors)
-      formatted-response
-      nil)))
-
-(defn- response-config [response]
-  (if-let [response-body (validate-response-body (:body response))]
-    (format-response response response-body)
-    nil))
-
-(defn- handle-api-create-bin [body {:strs [host] :as headers}]
-  (if-let [response (response-config body)]
-    (let [bin-id (core/create-bin {:private false :response (json/encode response)})]
-      (response/response {:bin-url (format "http://%s/bin/%s" host bin-id)
-                          :inspect-url (format "http://%s/bin/%s/inspect" host bin-id)
-                          :delete-url (format "http://%s/api/bin/%s/" host bin-id)}))
-    {:status 400 :headers {} :body "Bad Request"}))
-
-(defn- handle-api-delete-bin [id]
-  (let [bin-id (str->uuid id)
-        delete-count (core/delete-bin bin-id)]
-    (if (< 0 delete-count)
-      (response/response {:message (str "bin" bin-id "has been deleted")})
-      (handle-api-not-found (format "The bin %s could not be deleted because it doesn't exist" id)))))
-
-(defn- handle-api-inspect-bin [id]
-  (if-let [bin-id (:id (core/find-bin-by-id id))]
-    (response/response {:bin-id bin-id
-                        :requests (core/get-requests bin-id)})
-    (handle-api-not-found (format "The bin %s could not be found" id))))
-
-(defn- handle-api-bin-index []
-  (response/response {:bins (core/get-bins {:limit 50})}))
-
-(defroutes api-routes
-  (context "/api" []
-    (GET "/" [] (handle-api-bin-index))
-    (GET "/bin/:id/inspect" [id] (handle-api-inspect-bin id))
-    (DELETE "/bin/:id/delete" [id] (handle-api-delete-bin id))
-    (POST "/bins" {body :body headers :headers} (handle-api-create-bin body headers))
-    (route/not-found (handle-api-not-found "This resource could not be found"))))
-
 (defroutes web-routes
   (GET "/" {flash :flash} (views/index-page flash))
   (POST "/bins" req (-> req
                       params/params-request
                       handle-web-create-bin))
   (GET "/bin/:id/inspect" [id :as {session :session headers :headers}] (handle-web-inspect-bin
-                                                                         (str->uuid id) session headers))
+                                                                         (core/str->uuid id) session headers))
   (ANY "/bin/:id" req (handle-web-request-to-bin req))
   (POST "/bin/:id/delete" [id] (handle-web-delete-bin id))
   (route/resources "/")
   (route/not-found views/not-found-page))
-
-(def app*
-  (routes (-> api-routes
-            (wrap-routes ring-json/wrap-json-body {:keywords? true})
-            (ring-json/wrap-json-response))
-          (-> web-routes
-            (flash/wrap-flash)
-            (session/wrap-session))))

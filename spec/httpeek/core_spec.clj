@@ -7,6 +7,17 @@
 (describe "httpeek.core"
   (after (helper/reset-db))
 
+  (context "When converting a UUID"
+    (it "converts a valid string to a UUID"
+      (let [bin-id (create-bin {:private false :response helper/bin-response})
+            string (str bin-id)]
+        (should= bin-id (str->uuid string))))
+
+    (it "it returns nil for a non-uuid string"
+      (let [string "not-a-valid-uuid"]
+        (should= nil (str->uuid string)))))
+
+
   (context "When validating user-inputted expiration time"
     (context "And the expiration time is less than 1 hour"
       (it "returns a map of errors"
@@ -31,7 +42,7 @@
   (context "When validating a user-inputted response"
     (context "And the response-map is well-formed"
       (it "returns nil"
-        (should-be-nil (validate-response (json/decode default-response true)))))
+        (should-be-nil (validate-response default-response))))
 
     (context "And the status is nil"
       (it "returns a map of errors"
@@ -71,8 +82,7 @@
           (should= (+ 1 bin-count) (count (get-bins {:limit 50})))))
 
       (it "has the expected default values"
-        (let [bin (find-bin-by-id (create-bin {}))
-              default-response (json/decode default-response true)]
+        (let [bin (find-bin-by-id (create-bin {}))]
           (should= false (:private bin))
           (should= (:status default-response) (:status (:response bin)))
           (should= (:headers default-response) (:headers (:response bin)))
@@ -119,13 +129,13 @@
       (it "increases the request count by 1"
         (let [bin-id (create-bin {:private false :response helper/bin-response})
               request-count (count (all-requests))]
-          (add-request bin-id (json/encode {:foo "bar"}))
+          (add-request bin-id {:foo "bar"})
           (should= (+ 1 request-count)
                  (count (all-requests)))))
 
     (it "returns a request-id"
       (let [bin-id (create-bin {:private false :response helper/bin-response})
-            request-id (add-request bin-id (json/encode {:foo "bar"}))]
+            request-id (add-request bin-id {:foo "bar"})]
         (should-not-be-nil request-id))))
 
   (context "And the request is invalid"
@@ -147,21 +157,21 @@
     (it "doesn't increase the request count"
       (let [invalid-bin-id "not a valid id"
             request-count (count (all-requests))]
-        (add-request invalid-bin-id (json/encode {:foo "bar"}))
+        (add-request invalid-bin-id {:foo "bar"})
         (should= request-count
                  (count (all-requests)))))
 
     (it "returns nil"
       (let [invalid-bin-id "not a valid id"
-            request-id (add-request invalid-bin-id (json/encode {:foo "bar"}))]
+            request-id (add-request invalid-bin-id {:foo "bar"})]
         (should-be-nil request-id)))))
 
 
   (context "When getting the requests of a bin"
     (it "returns all the requests related to a bin"
       (let [bin-id (create-bin {:private false :response helper/bin-response})]
-        (add-request bin-id (json/encode {:foo "bar"}))
-        (add-request bin-id (json/encode {:fizz "buzz"}))
+        (add-request bin-id {:foo "bar"})
+        (add-request bin-id {:fizz "buzz"})
         (should= 2 (count (get-requests bin-id)))))
 
     (it "returns an empty vector if the bin doesn't exist"
@@ -180,8 +190,8 @@
 
     (it "only deletes requests associated with the deleted bin"
       (let [bin-id (create-bin {:private false :response helper/bin-response})
-            first-request-id (add-request bin-id (json/encode {:position "first"}))
-            second-request-id (add-request bin-id (json/encode {:position "second"}))]
+            first-request-id (add-request bin-id {:position "first"})
+            second-request-id (add-request bin-id {:position "second"})]
         (delete-bin "some-other-bin-id")
         (should-not (empty? (get-requests bin-id)))))
 
