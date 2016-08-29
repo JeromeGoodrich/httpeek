@@ -10,7 +10,7 @@
   clojure.lang.IPersistentMap
   (sql-value [value]
     (doto (org.postgresql.util.PGobject.)
-      (.setType "json")
+      (.setType "jsonb")
       (.setValue (json/encode value)))))
 
 (extend-protocol j/IResultSetReadColumn

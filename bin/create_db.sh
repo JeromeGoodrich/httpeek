@@ -7,6 +7,7 @@ setup_db() {
   local db_profile_name="$2"
 
   echo "Creating database user..."
+  createdb || echo "Skipping..."
   createuser --createdb httpeek || echo "Skipping..."
   psql -c "ALTER USER httpeek PASSWORD 'password';"
 
