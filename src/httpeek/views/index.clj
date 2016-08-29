@@ -33,7 +33,7 @@
          :title "HTTPeek: take a peek at HTTP requests"
          :supporting-text "HTTPeek is an application created to help users capture and read HTTP requests in a user friendly way.
                           To get started, create a 'bin' below. This bin will provide you with a unique URL to make requests to. You can also
-                          specify what type of HTTP response you want requests to that bin to return. Bins are ephemeral an only last a maximum
+                          specify what type of HTTP response you want requests to that bin to return. Bins are ephemeral and only last a maximum
                           of 24 hours."}
     (card-actions
       (for [message flash] [:p message])
