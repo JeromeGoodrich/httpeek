@@ -15,10 +15,6 @@
   (to-json [t jg]
     (cheshire.generate/write-string jg (str t))))
 
-(defn- str->uuid [uuid-string]
-  (core/with-error-handling nil
-                            (java.util.UUID/fromString uuid-string)))
-
 (defn- handle-web-inspect-bin [id session {:strs [host] :as headers}]
   (let [requested-bin (core/find-bin-by-id id)
         private? (:private requested-bin)
@@ -36,7 +32,7 @@
 
 (defn- parse-request-to-bin [request]
   (let [request (slurp-body request)
-        id (str->uuid (get-in request [:params :id]))
+        id (core/str->uuid (get-in request [:params :id]))
         body (json/encode request {:pretty true})
         requested-bin (core/find-bin-by-id id)]
     {:requested-bin requested-bin
@@ -120,7 +116,7 @@
       (user-error-response))))
 
 (defn- handle-web-delete-bin [id]
-  (let [bin-id (str->uuid id)
+  (let [bin-id (core/str->uuid id)
         delete-count (core/delete-bin bin-id)]
     (if (< 0 delete-count)
       (response/redirect "/")
@@ -137,7 +133,7 @@
                       params/params-request
                       handle-web-create-bin))
   (GET "/bin/:id/inspect" [id :as {session :session headers :headers}] (handle-web-inspect-bin
-                                                                         (str->uuid id) session headers))
+                                                                         (core/str->uuid id) session headers))
   (ANY "/bin/:id" req (handle-web-request-to-bin req))
   (POST "/bin/:id/delete" [id] (handle-web-delete-bin id))
   (route/resources "/")

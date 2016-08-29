@@ -6,10 +6,6 @@
             [compojure.route :as route]
             [httpeek.core :as core]))
 
-(defn- str->uuid [uuid-string]
-  (core/with-error-handling nil
-                            (java.util.UUID/fromString uuid-string)))
-
 (defn- handle-api-not-found [message]
   (response/not-found {:message message}))
 
@@ -40,14 +36,14 @@
     {:status 400 :headers {} :body "Bad Request"}))
 
 (defn- handle-api-delete-bin [id]
-  (let [bin-id (str->uuid id)
+  (let [bin-id (core/str->uuid id)
         delete-count (core/delete-bin bin-id)]
     (if (< 0 delete-count)
       (response/response {:message (str "bin" bin-id "has been deleted")})
       (handle-api-not-found (format "The bin %s could not be deleted because it doesn't exist" id)))))
 
 (defn- handle-api-inspect-bin [id]
-  (if-let [bin-id (:id (core/find-bin-by-id (str->uuid id)))]
+  (if-let [bin-id (:id (core/find-bin-by-id (core/str->uuid id)))]
     (response/response {:bin-id bin-id
                         :requests (core/get-requests bin-id)})
     (handle-api-not-found (format "The bin %s could not be found" id))))

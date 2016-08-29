@@ -7,6 +7,17 @@
 (describe "httpeek.core"
   (after (helper/reset-db))
 
+  (context "When converting a UUID"
+    (it "converts a valid string to a UUID"
+      (let [bin-id (create-bin {:private false :response helper/bin-response})
+            string (str bin-id)]
+        (should= bin-id (str->uuid string))))
+
+    (it "it returns nil for a non-uuid string"
+      (let [string "not-a-valid-uuid"]
+        (should= nil (str->uuid string)))))
+
+
   (context "When validating user-inputted expiration time"
     (context "And the expiration time is less than 1 hour"
       (it "returns a map of errors"
